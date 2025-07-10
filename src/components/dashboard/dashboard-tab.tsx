@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown } from 'lucide-react';
+import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, Triangle } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isValid } from 'date-fns';
@@ -118,20 +118,6 @@ const formatTradeDate = (dateString: string) => {
 
 
 const TradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
-    const isClosedTrades = title.toLowerCase().includes('closed');
-
-    if (!isClosedTrades) { // Render new Open Trades table
-        return (
-            <Card>
-                <CardHeader className="p-6">
-                    <CardTitle className="text-lg">{title}</CardTitle>
-                    <CardDescription className="text-xs">{description}</CardDescription>
-                </CardHeader>
-            </Card>
-        );
-    }
-
-
     return (
         <Card>
             <CardHeader className="p-6">
@@ -337,14 +323,15 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             />
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>bumba</CardTitle>
+            </CardHeader>
+        </Card>
 
-        <TradesTable 
-            title="Open Trades"
-            description="Trades that are currently active."
-            trades={data?.openTrades ?? []}
-            isLoading={isLoading}
-            hasData={!!data && data.openTrades.length > 0}
-        />
+        <Card />
+
         <TradesTable 
             title="Recent Closed Trades"
             description="A history of all closed trades."
