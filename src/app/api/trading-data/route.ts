@@ -58,7 +58,6 @@ export async function GET(request: Request) {
     ]);
 
     // --- DATA TRANSFORMATION ---
-    // Using default values for all fields to prevent crashes if API call fails or fields are missing.
     const botStatus = (Array.isArray(statusData?.bots?.status) && statusData.bots.status[0]) || {};
     
     const totalProfit = botStatus.total_profit || 0;
@@ -67,32 +66,63 @@ export async function GET(request: Request) {
     
     const totalTrades = botStatus.trade_count || 0;
     const winningTrades = botStatus.wins || 0;
-    const winRate = totalTrades > 0
-      ? (winningTrades / totalTrades)
-      : 0;
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
     
     const pnl = totalProfit;
     const profitRatio = botStatus.profit_ratio || 0;
 
-
-    const recentTrades = (tradesData.trades || [])
-      .sort((a: any, b: any) => new Date(b.close_date_ts).getTime() - new Date(a.close_date_ts).getTime())
-      .slice(0, 5)
-      .map((trade: any) => ({
+    const allTrades = (tradesData.trades || []).map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
         status: trade.is_open ? 'Open' : 'Closed',
-        profit: trade.is_open ? 'Pending' : `${((trade.profit_ratio || 0) * 100).toFixed(2)}%`,
+        profitPercentage: trade.is_open ? null : (trade.profit_ratio || 0) * 100,
         profitAbs: trade.is_open ? null : trade.profit_abs || 0,
+        openDate: trade.open_date_ts || '',
+        closeDate: trade.close_date_ts || null,
+        openRate: trade.open_rate || 0,
+        closeRate: trade.close_rate || 0,
+        amount: trade.amount || 0,
       }));
 
+    const openTrades = allTrades.filter((t: any) => t.status === 'Open')
+        .sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+
+    const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
+        .sort((a: any, b: any) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
+    
+    // Data for charts
+    const tradeHistoryForCharts = closedTrades
+        .slice() // Create a shallow copy before reversing
+        .reverse()
+        .map((trade: any, index: number) => ({
+            name: `Trade ${index + 1}`,
+            date: new Date(trade.closeDate).toLocaleDateString(),
+            profit: trade.profitAbs,
+        }));
+    
+    let cumulativeProfit = 0;
+    const cumulativeProfitHistory = tradeHistoryForCharts.map((trade: any) => {
+        cumulativeProfit += trade.profit;
+        return { ...trade, cumulativeProfit };
+    });
+
     const formattedData = {
-      totalRevenue: totalBalance,
-      pnl: pnl,
-      trades: totalTrades,
-      winRate: winRate,
-      pnlPercentage: profitRatio,
-      recentTrades,
+      // Summary Stats
+      totalBalance,
+      pnl,
+      totalTrades,
+      winRate,
+      profitRatio,
+      winningTrades,
+      losingTrades: totalTrades - winningTrades,
+      
+      // Trade Lists
+      openTrades,
+      closedTrades,
+
+      // Chart Data
+      tradeHistoryForCharts,
+      cumulativeProfitHistory,
     };
     // --- END DATA TRANSFORMATION ---
 

@@ -24,7 +24,13 @@ export default function DashboardPage() {
             </div>
           </div>
         </header>
-        <main className="flex-1 space-y-2 p-4 pt-6">
+        <main className="flex-1 space-y-4 p-4 pt-6">
+           <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tight">Bot Performance Comparison</h2>
+              <p className="text-muted-foreground">
+                An overview of each bot's trading performance.
+              </p>
+            </div>
           <TabsContent value="chatgpt" className="space-y-4">
             <DashboardTab modelName="ChatGPT" />
           </TabsContent>
