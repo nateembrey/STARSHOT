@@ -125,8 +125,11 @@ export default function DashboardPage() {
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
           <div className="flex h-16 items-center px-4 md:px-8">
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-accent"><path d="m12 11 4 4-4 4-4-4 4-4Z"/><path d="M20.7 4.2a.9.9 0 0 0-.7-.7l-6-2.5a.9.9 0 0 0-.7 0l-6 2.5a.9.9 0 0 0-.7.7c-.1.3 0 .6.2.8l4.9 4.9-3.2 3.2a.9.9 0 0 0 0 1.3l4.1 4.1c.4.4 1 .4 1.3 0l4.1-4.1a.9.9 0 0 0 0-1.3l-3.2-3.2 4.9-4.9c.2-.2.3-.5.2-.8Z"/><path d="m12 2 4.9 2-4.9 2-4.9-2 4.9-2Z"/></svg>
+            <h1 className="text-2xl font-bold tracking-widest text-white flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-accent">
+                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/>
+                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/>
+              </svg>
               STARSHOT
             </h1>
             <div className="flex-1 flex justify-center">
