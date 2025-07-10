@@ -80,11 +80,11 @@ export interface TradingData {
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-8">
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-8">
                 {isLoading ? (
                     <>
                         <Skeleton className="h-10 w-3/4" />
@@ -115,7 +115,7 @@ const formatTradeDate = (dateString: string) => {
 const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="p-6">
+            <CardHeader className="p-8">
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
@@ -175,7 +175,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
 
 const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: ChartData[], isLoading: boolean, hasData: boolean, biggestWin: number }) => (
     <Card>
-        <CardHeader className="p-6">
+        <CardHeader className="p-8">
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle className="text-lg">Profit/Loss per Trade</CardTitle>
@@ -241,7 +241,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     
     return (
         <Card>
-            <CardHeader className="p-6">
+            <CardHeader className="p-8">
                 <CardTitle className="text-lg">Cumulative Profit</CardTitle>
                 <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
             </CardHeader>
@@ -322,10 +322,10 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
         </div>
 
         <Card>
-            <CardHeader>
-                <CardTitle>bumba</CardTitle>
+            <CardHeader className="p-8">
+                <CardTitle>Open Trades</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8">
               {isLoading ? (
                   <Skeleton className="h-40 w-full" />
               ) : openTradesFromStatus.length > 0 ? (
@@ -379,5 +379,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
+
+    
 
     
