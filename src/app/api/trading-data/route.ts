@@ -23,14 +23,12 @@ export async function GET(request: Request) {
   const passwordSelector = '#password-input';
   const loginButtonSelector = 'button[type="submit"]';
 
-  // These selectors are derived from the HTML provided.
   const dataSelectors = {
     chatgpt: {
-      summaryTable: '.p-datatable-tbody', // Selector for the summary table body
-      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody', // Selector for the trades table body
+      summaryTable: '.p-datatable-tbody',
+      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody',
     },
     gemini: {
-       // Assuming Gemini selectors are the same. If not, they need to be updated.
       summaryTable: '.p-datatable-tbody',
       tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody',
     },
@@ -48,7 +46,7 @@ export async function GET(request: Request) {
   const password = process.env.SCRAPE_PASSWORD;
 
   if (!username || !password) {
-    console.error('Missing SCRAPE_USERNAME or SCRAPE_PASSWORD in .env.local');
+    console.error('SCRAPER_ERROR: Missing SCRAPE_USERNAME or SCRAPE_PASSWORD in .env.local');
     return NextResponse.json(
       {error: 'Server configuration error: Missing credentials.'},
       {status: 500}
@@ -57,6 +55,7 @@ export async function GET(request: Request) {
 
   let browser;
   try {
+    console.log('SCRAPER_LOG: Launching browser...');
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -66,22 +65,25 @@ export async function GET(request: Request) {
     await page.setViewport({width: 1366, height: 768});
 
     // Login
+    console.log(`SCRAPER_LOG: Navigating to login page: ${loginUrl}`);
     await page.goto(loginUrl, {waitUntil: 'networkidle2'});
+    
+    console.log('SCRAPER_LOG: Typing username and password...');
     await page.type(usernameSelector, username);
     await page.type(passwordSelector, password);
     
-    // Click the login button and wait for the dashboard to appear
+    console.log(`SCRAPER_LOG: Clicking login button: ${loginButtonSelector}`);
     await page.click(loginButtonSelector);
     
+    console.log('SCRAPER_LOG: Login button clicked. Waiting for dashboard to load...');
     // This is a crucial step: wait for a specific element that appears only when data is loaded.
-    // This confirms a successful login and that the page is ready.
-    await page.waitForSelector('.p-datatable-tbody', { timeout: 15000 });
+    await page.waitForSelector('.p-datatable-tbody', { timeout: 20000 });
+    console.log('SCRAPER_LOG: Dashboard loaded successfully. Starting data extraction.');
 
 
     // --- DATA EXTRACTION ---
     const modelSelectors = dataSelectors[model as 'chatgpt' | 'gemini'];
     
-    // Extract from the summary table
     const summaryData = await page.$eval(modelSelectors.summaryTable, (tbody) => {
         const botRow = tbody.querySelector('tr:nth-child(1)');
         const summaryRow = tbody.querySelector('tr:nth-child(2)');
@@ -101,12 +103,11 @@ export async function GET(request: Request) {
         const winRate = totalTrades > 0 ? `${((wins / totalTrades) * 100).toFixed(1)}%` : '0%';
 
 
-        return { totalRevenue, pnl, trades: `${totalTrades}`, winRate, pnlPercentage: 'N/A' }; // pnlPercentage not available
+        return { totalRevenue, pnl, trades: `${totalTrades}`, winRate, pnlPercentage: 'N/A' };
     });
 
-    // Extract from the recent trades table
     const recentTrades = await page.$$eval(
-      `${modelSelectors.tradesTable} > tr`, // Select all rows in the trades table body
+      `${modelSelectors.tradesTable} > tr`,
       (rows) =>
         rows.map((row) => {
           const cells = row.querySelectorAll('td');
@@ -117,32 +118,44 @@ export async function GET(request: Request) {
           return {
             asset: cells[2]?.textContent?.trim() || 'N/A',
             type: (cells[1]?.textContent?.trim() || 'N/A').includes('Long') ? 'BUY' : 'SELL',
-            status: 'Closed', // Status is not available in the trades table, assuming 'Closed'
+            status: 'Closed',
             profit: profitText.includes('%') 
                 ? `${isProfit ? '+' : '-'}${profitText}`
                 : profitText,
           };
-        }).slice(0, 5) // Limit to 5 trades for the display
+        }).slice(0, 5)
     );
+    console.log('SCRAPER_LOG: Data extraction complete.');
     // --- END DATA EXTRACTION ---
 
     return NextResponse.json({
       ...summaryData,
       recentTrades,
     });
-  } catch (error) {
-    console.error('Scraping failed:', error);
+  } catch (error: any) {
+    console.error('SCRAPER_ERROR: An error occurred during scraping.');
     // This part of the message is helpful for debugging in your server logs.
-    // You can check your terminal for the full error message.
-    if (error instanceof Error && error.name === 'TimeoutError') {
-       console.error('TimeoutError: The page timed out after login. This could mean the login failed, or the dashboard page is slow to load.');
+    if (error.name === 'TimeoutError') {
+       console.error('SCRAPER_ERROR_DETAIL: TimeoutError - The page timed out waiting for the selector ".p-datatable-tbody". This could mean the login failed, the page is slow, or the selector is wrong.');
+    } else {
+       console.error('SCRAPER_ERROR_DETAIL:', error);
     }
+    
+    if (browser) {
+        const page = (await browser.pages())[0];
+        if (page) {
+            console.log('SCRAPER_LOG: Taking a debug screenshot to debug-screenshot.png');
+            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
+        }
+    }
+    
     return NextResponse.json(
-      {error: 'Failed to scrape data.'},
+      {error: 'Failed to scrape data. Check server logs for details.'},
       {status: 500}
     );
   } finally {
     if (browser) {
+      console.log('SCRAPER_LOG: Closing browser.');
       await browser.close();
     }
   }
