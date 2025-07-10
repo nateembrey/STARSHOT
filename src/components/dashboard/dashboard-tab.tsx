@@ -60,7 +60,6 @@ export interface TradingData {
   pnl: number;
   totalTrades: number;
   winRate: number;
-
   winningTrades: number;
   losingTrades: number;
   openTrades: Trade[];
@@ -127,6 +126,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                     <TableHead className="text-xs">Open Rate</TableHead>
                                     <TableHead className="text-xs">{isClosedTrades ? "Close Rate" : "Open Date"}</TableHead>
                                     <TableHead className="text-right text-xs">{isClosedTrades ? "Profit" : "Status"}</TableHead>
+
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -187,14 +187,15 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                        <Bar 
-                          dataKey="profit" 
+                        <Bar
+                          dataKey="profit"
                           radius={2}
-                        >
-                            {data.map((entry, index) => (
-                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
-                            ))}
-                        </Bar>
+                          fill={(entry) =>
+                            entry.profit >= 0
+                              ? 'hsl(var(--chart-2))'
+                              : 'hsl(var(--accent))'
+                          }
+                        />
                     </BarChart>
                 </ChartContainer>
             )}
