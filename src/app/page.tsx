@@ -8,6 +8,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Notifications } from '@/components/dashboard/notifications';
 import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, isValid } from 'date-fns';
 
 function usePageVisibility() {
   const [isVisible, setIsVisible] = useState(typeof document === 'undefined' || document.visibilityState === 'visible');
@@ -33,13 +35,13 @@ function usePageVisibility() {
 export default function DashboardPage() {
   const [chatGptData, setChatGptData] = useState<TradingData | null>(null);
   const [geminiData, setGeminiData] = useState<TradingData | null>(null);
-  const [debugData, setDebugData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newTradesCount, setNewTradesCount] = useState(0);
   const lastChatGptTradeCount = useRef<number | null>(null);
   const lastGeminiTradeCount = useRef<number | null>(null);
   const isVisible = usePageVisibility();
   const [activeTab, setActiveTab] = useState('chatgpt');
+  const [debugData, setDebugData] = useState<any>(null);
 
   const { toast } = useToast();
 
@@ -60,17 +62,6 @@ export default function DashboardPage() {
       return null;
     }
   }, [toast]);
-  
-  const fetchDebugData = useCallback(async (model: 'chatgpt' | 'gemini') => {
-    try {
-        const response = await fetch(`/api/raw-status-debug?model=${model}`);
-        const data = await response.json();
-        setDebugData(data);
-    } catch (err) {
-        console.error("Failed to fetch debug data", err);
-        setDebugData({ error: "Failed to fetch debug data." });
-    }
-  }, []);
 
 
   const fetchAllData = useCallback(async (isInitialFetch = false) => {
@@ -110,28 +101,46 @@ export default function DashboardPage() {
   }, [fetchDataForModel]);
 
   useEffect(() => {
+    const fetchDebugData = async () => {
+      try {
+        const res = await fetch('/api/raw-status-debug?model=chatgpt');
+        if (res.ok) {
+          const data = await res.json();
+          setDebugData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch debug data", error);
+      }
+    };
+    fetchDebugData();
+  }, []);
+
+  useEffect(() => {
     fetchAllData(true);
-    fetchDebugData(activeTab as 'chatgpt' | 'gemini');
-  }, [fetchAllData, fetchDebugData, activeTab]);
+  }, [fetchAllData]);
 
   useEffect(() => {
     if (isVisible) {
       fetchAllData(false);
-      fetchDebugData(activeTab as 'chatgpt' | 'gemini');
       const intervalId = setInterval(() => {
         fetchAllData(false);
-        fetchDebugData(activeTab as 'chatgpt' | 'gemini');
       }, 15000);
 
       return () => {
         clearInterval(intervalId);
       };
     }
-  }, [isVisible, fetchAllData, fetchDebugData, activeTab]);
+  }, [isVisible, fetchAllData]);
 
 
   const handleClearNotifications = () => {
     setNewTradesCount(0);
+  };
+
+  const formatTradeDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (!isValid(date)) return 'N/A';
+    return format(date, 'yyyy-MM-dd HH:mm:ss');
   };
 
 
@@ -170,13 +179,38 @@ export default function DashboardPage() {
           <TabsContent value="gemini" className="space-y-4">
             <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
           </TabsContent>
-          <Card>
+          {debugData && debugData.openTrades && debugData.openTrades.length > 0 && (
+            <Card className="mt-4">
               <CardContent className="p-4">
-                  <pre className="text-xs whitespace-pre-wrap">
-                      {JSON.stringify(debugData, null, 2)}
-                  </pre>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Asset</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Open Rate</TableHead>
+                      <TableHead>Profit %</TableHead>
+                      <TableHead>Profit Abs</TableHead>
+                      <TableHead>Open Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {debugData.openTrades.map((trade: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{trade.asset}</TableCell>
+                        <TableCell>{trade.type}</TableCell>
+                        <TableCell>{trade.amount.toFixed(4)}</TableCell>
+                        <TableCell>{trade.openRate}</TableCell>
+                        <TableCell>{trade.profitPercentage.toFixed(2)}%</TableCell>
+                        <TableCell>{trade.profitAbs.toFixed(2)}</TableCell>
+                        <TableCell>{formatTradeDate(trade.openDate)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
-          </Card>
+            </Card>
+          )}
         </main>
       </div>
     </Tabs>

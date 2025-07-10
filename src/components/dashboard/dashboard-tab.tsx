@@ -165,7 +165,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                                 <TableCell className="text-xs">{trade.openRate}</TableCell>
                                                 <TableCell className="text-xs">{trade.currentRate}</TableCell>
                                                 <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${isProfit ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]'}`}>
-                                                    {isProfit ? '▲' : '▼'} {trade.profitPercentage.toFixed(2)}% ({trade.profitAbs?.toFixed(2)})
+                                                    {isProfit ? '▲' : '▼'} {trade.profitPercentage.toFixed(2)}% (${trade.profitAbs?.toFixed(2)})
                                                 </TableCell>
                                                 <TableCell className="whitespace-nowrap text-xs">{formatTradeDate(trade.openDate)}</TableCell>
                                             </TableRow>
