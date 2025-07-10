@@ -104,6 +104,7 @@ export async function GET(request: Request) {
     const losingTrades = totalTrades - winningTrades;
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
     const pnl = closedTrades.reduce((acc: number, trade: any) => acc + (trade.profitAbs ?? 0), 0);
+    const biggestWin = Math.max(0, ...closedTrades.map(trade => trade.profitAbs ?? 0));
     
     const tradeHistoryForCharts = closedTrades
         .slice() 
@@ -135,6 +136,7 @@ export async function GET(request: Request) {
       closedTrades,
       tradeHistoryForCharts,
       cumulativeProfitHistory,
+      biggestWin,
     };
 
     return NextResponse.json(formattedData);

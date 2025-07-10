@@ -67,6 +67,7 @@ export interface TradingData {
   closedTrades: Trade[];
   tradeHistoryForCharts: ChartData[];
   cumulativeProfitHistory: ChartData[];
+  biggestWin: number;
 }
 
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
@@ -112,7 +113,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                     <div className="space-y-2 px-2">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
                     </div>
-                ) : !hasData || trades.length === 0 ? (
+                ) : !hasData ? (
                     <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
                         {isLoading ? 'Loading...' : 'No trades found.'}
                     </div>
@@ -168,11 +169,23 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
     )
 }
 
-const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => (
+const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: ChartData[], isLoading: boolean, hasData: boolean, biggestWin: number }) => (
     <Card>
         <CardHeader>
-            <CardTitle className="text-lg">Profit/Loss per Trade</CardTitle>
-            <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="text-lg">Profit/Loss per Trade</CardTitle>
+                    <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
+                </div>
+                {hasData && (
+                    <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Biggest Trade</p>
+                        <p className="font-bold text-lg text-[hsl(var(--chart-2))]">
+                            {biggestWin.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                        </p>
+                    </div>
+                )}
+            </div>
         </CardHeader>
         <CardContent className="p-2 pt-0">
             {isLoading ? (
@@ -272,7 +285,12 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProfitLossChart data={data?.tradeHistoryForCharts ?? []} isLoading={isLoading} hasData={!!data && (data?.tradeHistoryForCharts?.length ?? 0) > 0} />
+            <ProfitLossChart 
+                data={data?.tradeHistoryForCharts ?? []} 
+                isLoading={isLoading} 
+                hasData={!!data && (data?.tradeHistoryForCharts?.length ?? 0) > 0}
+                biggestWin={data?.biggestWin ?? 0}
+            />
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
 
@@ -295,5 +313,3 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
-
-    
