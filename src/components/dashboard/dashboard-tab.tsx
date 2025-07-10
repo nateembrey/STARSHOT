@@ -407,6 +407,9 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   const winsLossesIcon = (data?.winningTrades ?? 0) >= (data?.losingTrades ?? 0) ? ChevronsUp : ChevronsDown;
   const percentageProfitValue = data?.percentageProfit ?? 0;
   const percentageProfitColor = percentageProfitValue >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
+  const winRatePercentage = (data?.winRate ?? 0) * 100;
+  const formattedWinRate = winRatePercentage % 1 === 0 ? winRatePercentage.toFixed(0) : winRatePercentage.toFixed(1);
+
 
   const formatPnl = (value: number) => {
     const absValue = Math.abs(value);
@@ -433,7 +436,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="% Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${formattedWinRate}%`} icon={Percent} subtext="Percentage of profitable trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins/Losses" value={`${data?.winningTrades ?? 0}/${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
         </div>
         
@@ -505,5 +508,3 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
-
-    
