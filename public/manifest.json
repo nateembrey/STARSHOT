@@ -1,0 +1,16 @@
+{
+  "name": "STARSHOT Dashboard",
+  "short_name": "STARSHOT",
+  "description": "Real-time trading bot data dashboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#333333",
+  "theme_color": "#333333",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
