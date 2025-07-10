@@ -86,6 +86,12 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'content-in': 'content-in 0.5s ease-out forwards',
       },
+      transformOrigin: {
+        '0': '0%',
+      },
+      translate: {
+        '1/2': '50%',
+      }
     },
   },
   plugins: [require('tailwindcss-animate')],

@@ -7,6 +7,7 @@ import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Notifications } from '@/components/dashboard/notifications';
+import { cn } from '@/lib/utils';
 
 function usePageVisibility() {
   const [isVisible, setIsVisible] = useState(typeof document === 'undefined' || document.visibilityState === 'visible');
@@ -177,14 +178,21 @@ export default function DashboardPage() {
             </div>
           </div>
         </header>
-        <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-            <main className="flex-1 space-y-4 p-8 pt-6 md:p-16">
-            <TabsContent value="chatgpt" className="space-y-4">
-                <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
-            </TabsContent>
-            <TabsContent value="gemini" className="space-y-4">
-                <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
-            </TabsContent>
+        <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="overflow-x-hidden">
+            <main className="flex-1">
+                <div
+                    className={cn(
+                        'flex w-[200%] transition-transform duration-500 ease-in-out',
+                        activeTab === 'gemini' ? '-translate-x-1/2' : 'translate-x-0'
+                    )}
+                >
+                    <TabsContent value="chatgpt" className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
+                        <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
+                    </TabsContent>
+                    <TabsContent value="gemini" className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
+                        <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
+                    </TabsContent>
+                </div>
             </main>
         </div>
       </div>
