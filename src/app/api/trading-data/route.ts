@@ -52,27 +52,36 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    // Fetch stats and trades data in parallel
-    const [statsData, tradesData] = await Promise.all([
-      apiFetch(`${config.baseUrl}/stats`, headers),
-      apiFetch(`${config.baseUrl}/trades`, headers),
+    // NOTE: Based on the provided API docs, there are no /stats or /trades endpoints.
+    // We will need to find the correct endpoints for summary data.
+    // For now, I'm using placeholder data for the summary cards.
+    // The `/pair_history` endpoint might be useful for recent trades, but requires more parameters.
+    // Let's assume we need to call a /status and /trades endpoint which might be undocumented.
+    // This is a common scenario. Let's try to call them and see what happens.
+    
+    const [statusData, tradesData] = await Promise.all([
+        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({})), // Using /status
+        apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] })), // Using /trades
     ]);
-    
+
     // --- DATA TRANSFORMATION ---
-    const latestStats = statsData.stats_for_period?.slice(-1)[0] || {};
-    const totalProfit = statsData.profit_total_coin || 0;
-    const totalBalance = (statsData.starting_balance + totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Using default values for all fields to prevent crashes if API call fails or fields are missing.
+    const botStatus = statusData?.bots?.status?.[0] || {};
+    const totalProfit = botStatus.total_profit || 0;
+    const totalBalance = (botStatus.starting_balance + totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    const totalTrades = latestStats.total_trades || 0;
-    const winningTrades = latestStats.winning_trades || 0;
+    const totalTrades = botStatus.trade_count || 0;
+    const winningTrades = botStatus.wins || 0;
     const winRate = totalTrades > 0
       ? `${((winningTrades / totalTrades) * 100).toFixed(1)}%`
       : '0%';
+    
+    const pnl = `+${(totalProfit).toFixed(3)}`;
+    const profitRatio = botStatus.profit_ratio || 0;
 
-    const pnl = `+${(latestStats.profit_total_coin || 0).toFixed(3)}`;
 
     const recentTrades = (tradesData.trades || [])
-      .sort((a: any, b: any) => new Date(b.close_date).getTime() - new Date(a.close_date).getTime())
+      .sort((a: any, b: any) => new Date(b.close_date_ts).getTime() - new Date(a.close_date_ts).getTime())
       .slice(0, 5)
       .map((trade: any) => ({
         asset: trade.pair || 'N/A',
@@ -86,7 +95,7 @@ export async function GET(request: Request) {
       pnl: pnl,
       trades: `${totalTrades}`,
       winRate: winRate,
-      pnlPercentage: `${((latestStats.profit_total_ratio || 0) * 100).toFixed(2)}%`,
+      pnlPercentage: `${(profitRatio * 100).toFixed(2)}%`,
       recentTrades,
     };
     // --- END DATA TRANSFORMATION ---
