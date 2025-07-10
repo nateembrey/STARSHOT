@@ -66,10 +66,11 @@ export async function GET(request: Request) {
     const allTrades = (tradesData?.trades ?? []).map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
-        status: trade.close_date_ts ? 'Closed' : 'Open',
-        profitPercentage: !trade.is_open ? (trade.profit_ratio ?? 0) * 100 : null,
-        profitAbs: trade.close_date_ts ? trade.profit_abs ?? 0 : null,
-        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : '',
+        // A trade is closed ONLY if close_date_ts is not null. Handles 0 or "" from API.
+        status: trade.close_date_ts !== null ? 'Closed' : 'Open',
+        profitPercentage: (trade.profit_ratio ?? 0) * 100,
+        profitAbs: trade.profit_abs ?? 0,
+        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
         closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
         openRate: trade.open_rate ?? 0,
         closeRate: trade.close_rate ?? 0,
