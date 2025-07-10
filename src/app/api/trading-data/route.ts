@@ -59,38 +59,41 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    // Only fetch from /trades endpoint
+    // Only fetch from /trades endpoint as the single source of truth
     const tradesData = await apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] }));
 
-    // --- DATA TRANSFORMATION (ROBUST) ---
-    const allTrades = (tradesData?.trades ?? []).map((trade: any) => ({
-        asset: trade.pair || 'N/A',
-        type: trade.is_short ? 'SELL' : 'BUY',
-        // A trade is closed ONLY if close_date_ts is not null. Handles 0 or "" from API.
-        status: trade.close_date_ts !== null ? 'Closed' : 'Open',
-        profitPercentage: (trade.profit_ratio ?? 0) * 100,
-        profitAbs: trade.profit_abs ?? 0,
-        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
-        closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
-        openRate: trade.open_rate ?? 0,
-        closeRate: trade.close_rate ?? 0,
-        amount: trade.amount ?? 0,
-      }));
+    // --- ROBUST DATA TRANSFORMATION ---
+    const allTradesSource = tradesData?.trades ?? [];
 
+    const allTrades = allTradesSource.map((trade: any) => ({
+      asset: trade.pair || 'N/A',
+      type: trade.is_short ? 'SELL' : 'BUY',
+      status: trade.close_date_ts !== null ? 'Closed' : 'Open',
+      profitPercentage: (trade.profit_ratio ?? 0) * 100,
+      profitAbs: trade.profit_abs ?? 0,
+      openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
+      closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
+      openRate: trade.open_rate ?? 0,
+      closeRate: trade.close_rate ?? 0,
+      amount: trade.amount ?? 0,
+    }));
+
+    // Unerringly filter into open and closed trades
     const openTrades = allTrades.filter((t: any) => t.status === 'Open')
-        .sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+      .sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
 
     const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
-        .sort((a: any, b: any) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
+      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
 
-    // --- CALCULATE STATS FROM TRADES ---
+
+    // --- CALCULATE STATS RELIABLY FROM TRADES ---
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
     const losingTrades = totalTrades - winningTrades;
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
     const pnl = closedTrades.reduce((acc: number, trade: any) => acc + (trade.profitAbs ?? 0), 0);
     
-    // Data for charts
+    // Data for charts, derived from the reliable closed trades list
     const tradeHistoryForCharts = closedTrades
         .slice() 
         .reverse()
