@@ -247,10 +247,12 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         setPrediction(null); // Clear previous prediction
         
         try {
+            // Filter out the "Start" point and any other points without a valid date.
             const historyForPrediction = data
-                .filter(d => d.date) // This is the fix: ensure we only use points with a valid date.
+                .filter(d => d.name !== 'Start' && d.date)
                 .map(d => ({
-                    date: new Date(d.date).toISOString().split('T')[0], // format as yyyy-MM-dd
+                    // The date is already locale string, so we create a Date object to format it to yyyy-MM-dd
+                    date: new Date(d.date).toISOString().split('T')[0],
                     cumulativeProfit: d.cumulativeProfit || 0,
                 }));
 
