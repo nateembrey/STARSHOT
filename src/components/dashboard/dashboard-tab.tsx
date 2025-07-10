@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, Percent } from 'lucide-react';
+import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isValid } from 'date-fns';
@@ -72,24 +72,24 @@ export interface TradingData {
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="p-4 pt-0">
+            <CardContent>
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-12 w-3/4" />
+                        <Skeleton className="h-8 w-3/4" />
                         {subtext && <Skeleton className="h-4 w-1/2 mt-1" />}
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-6xl font-bold">{value}</div>
+                        <div className="text-4xl font-bold">{value}</div>
                         {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-6xl font-bold text-muted-foreground/50">N/A</div>
+                        <div className="text-4xl font-bold text-muted-foreground/50">N/A</div>
                         {subtext && <p className="text-xs text-muted-foreground/50">No data available</p>}
                     </>
                 )}
@@ -103,8 +103,8 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
 
     return (
         <Card>
-            <CardHeader className="p-4">
-                <CardTitle className="text-sm">{title}</CardTitle>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0">
@@ -170,8 +170,8 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
 
 const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => (
     <Card>
-        <CardHeader className="p-4">
-            <CardTitle className="text-sm">Profit/Loss per Trade</CardTitle>
+        <CardHeader>
+            <CardTitle>Profit/Loss per Trade</CardTitle>
             <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
         </CardHeader>
         <CardContent className="p-2 pt-0">
@@ -200,19 +200,30 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
 
 const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => {
     const startProfit = data.length > 0 ? data[0].cumulativeProfit ?? 0 : 0;
-    const endProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
-    const isAboveStart = endProfit >= startProfit;
+    
+    const mintGreen = "hsl(var(--chart-2))";
+    const orangeRed = "hsl(var(--accent))";
+    
+    // Define gradients
+    const gradientIdGreen = "gradient-green";
+    const gradientIdRed = "gradient-red";
+    const gradientOffset = () => {
+        if (!data || data.length === 0) return 0;
+        const dataMax = Math.max(...data.map(i => i.cumulativeProfit ?? 0));
+        const dataMin = Math.min(...data.map(i => i.cumulativeProfit ?? 0));
 
-    const mintGreen = "hsl(158 78% 57%)";
-    const orangeRed = "hsl(16 100% 50%)";
-
-    const strokeColor = isAboveStart ? mintGreen : orangeRed;
-    const gradientId = isAboveStart ? "gradient-green" : "gradient-red";
+        if (dataMax <= startProfit) return 0; // All below
+        if (dataMin >= startProfit) return 1; // All above
+        
+        const range = dataMax - dataMin;
+        return (dataMax - startProfit) / range;
+    };
+    const off = gradientOffset();
 
     return (
         <Card>
-            <CardHeader className="p-4">
-                <CardTitle className="text-sm">Cumulative Profit</CardTitle>
+            <CardHeader>
+                <CardTitle>Cumulative Profit</CardTitle>
                 <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0">
@@ -228,26 +239,18 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} domain={['dataMin', 'dataMax']} tickFormatter={(value) => `$${value}`} />
                             <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                             <defs>
-                                <linearGradient id="gradient-green" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={mintGreen} stopOpacity={0.4}/>
-                                    <stop offset="95%" stopColor={mintGreen} stopOpacity={0}/>
+                                <linearGradient id={gradientIdGreen} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset={off} stopColor={mintGreen} stopOpacity={0.4}/>
+                                    <stop offset={off} stopColor={mintGreen} stopOpacity={0}/>
                                 </linearGradient>
-                                <linearGradient id="gradient-red" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={orangeRed} stopOpacity={0.4}/>
-                                    <stop offset="95%" stopColor={orangeRed} stopOpacity={0}/>
+                                <linearGradient id={gradientIdRed} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset={off} stopColor={orangeRed} stopOpacity={0.4}/>
+                                    <stop offset={off} stopColor={orangeRed} stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
                             <ReferenceLine y={startProfit} label={{ value: "Start", position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                            <Area 
-                                type="monotone" 
-                                dataKey="cumulativeProfit" 
-                                name="Cumulative Profit" 
-                                stroke={strokeColor}
-                                strokeWidth={2}
-                                fillOpacity={1} 
-                                fill={`url(#${gradientId})`}
-                                animationDuration={300}
-                            />
+                            <Area type="monotone" dataKey="cumulativeProfit" stroke={mintGreen} fill={`url(#${gradientIdGreen})`} strokeWidth={2} />
+                            <Area type="monotone" dataKey="cumulativeProfit" stroke={orangeRed} fill={`url(#${gradientIdRed})`} strokeWidth={2} />
                         </AreaChart>
                     </ChartContainer>
                 )}
@@ -260,13 +263,15 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   const hasData = !!data && data.totalTrades > 0;
   const pnlValue = data?.pnl ?? 0;
   const pnlColor = pnlValue >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
+  const winsLossesIcon = (data?.winningTrades ?? 0) >= (data?.losingTrades ?? 0) ? ChevronsUp : ChevronsDown;
 
   return (
     <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Net profit from all closed trades" />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total number of completed trades" />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext={`${data?.winningTrades ?? 0} Wins / ${data?.losingTrades ?? 0} Losses`} />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
