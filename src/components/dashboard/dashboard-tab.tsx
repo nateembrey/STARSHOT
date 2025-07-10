@@ -76,20 +76,20 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-2">
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-10 w-3/4" />
                         {subtext && <Skeleton className="h-4 w-1/2 mt-1" />}
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-4xl font-bold">{value}</div>
+                        <div className="text-5xl font-bold">{value}</div>
                         {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-4xl font-bold text-muted-foreground/50">N/A</div>
+                        <div className="text-5xl font-bold text-muted-foreground/50">N/A</div>
                         {subtext && <p className="text-xs text-muted-foreground/50">No data available</p>}
                     </>
                 )}
@@ -295,3 +295,5 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
+
+    
