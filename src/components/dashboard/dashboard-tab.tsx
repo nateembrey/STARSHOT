@@ -68,6 +68,7 @@ export interface TradingData {
   tradeHistoryForCharts: ChartData[];
   cumulativeProfitHistory: ChartData[];
   biggestWin: number;
+  percentageProfit: number;
 }
 
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
@@ -277,11 +278,12 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
   return (
     <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={`${(data?.percentageProfit ?? 0).toFixed(2)}%`} icon={TrendingUp} subtext="Total P&L / total invested capital." />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
