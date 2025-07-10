@@ -222,7 +222,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
           <CardDescription>January - July</CardDescription>
         </CardHeader>
         <CardContent className="pl-2 pr-4 pb-4">
-          <ChartContainer config={singleModelChartConfig} className="h-[200px] w-full">
+          <ChartContainer config={singleModelChartConfig} className="h-[150px] w-full">
               <LineChart data={singleModelChartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis 
@@ -297,8 +297,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                     <TableCell className="font-medium p-2">{trade.asset}</TableCell>
                     <TableCell className="p-2">
                       <Badge
-                        variant={trade.type === 'BUY' ? 'default' : 'destructive'}
-                        className="flex items-center gap-1 w-fit"
+                        variant={trade.type === 'BUY' ? 'secondary' : 'default'}
+                        className="flex items-center gap-1 w-fit bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
                       >
                         {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                         {trade.type}
