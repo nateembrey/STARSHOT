@@ -80,7 +80,7 @@ export interface TradingData {
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-8">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-8">
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -88,17 +88,17 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                 {isLoading ? (
                     <>
                         <Skeleton className="h-10 w-3/4" />
-                        {subtext && <Skeleton className="h-4 w-1/2 mt-2" />}
+                        {subtext && <Skeleton className="h-4 w-1/2 mt-4" />}
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-5xl font-bold tracking-tight">{value}</div>
-                        {subtext && <p className="text-xs text-muted-foreground mt-2">{subtext}</p>}
+                        <div className="text-6xl font-bold tracking-tight">{value}</div>
+                        {subtext && <p className="text-xs text-muted-foreground mt-4">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-5xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
-                        {subtext && <p className="text-xs text-muted-foreground/50 mt-2">No data available</p>}
+                        <div className="text-6xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
+                        {subtext && <p className="text-xs text-muted-foreground/50 mt-4">No data available</p>}
                     </>
                 )}
             </CardContent>
