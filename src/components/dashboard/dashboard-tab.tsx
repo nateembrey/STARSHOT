@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, Triangle } from 'lucide-react';
+import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, Triangle, ArrowUp, ArrowDown } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isValid } from 'date-fns';
@@ -315,6 +315,8 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     });
     return `$${formatted}k`;
   };
+  
+  const openTradesFromStatus = data?.rawStatusResponse?.orders?.filter((t: any) => t.is_open) ?? [];
 
   return (
     <div className="space-y-4">
@@ -343,13 +345,42 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CardContent>
               {isLoading ? (
                   <Skeleton className="h-40 w-full" />
-              ) : data?.rawStatusResponse ? (
-                  <pre className="text-xs overflow-auto p-4 bg-muted rounded-md max-h-96">
-                      {JSON.stringify(data.rawStatusResponse, null, 2)}
-                  </pre>
+              ) : openTradesFromStatus.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Asset</TableHead>
+                        <TableHead className="text-right text-xs">Unrealized P/L</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {openTradesFromStatus.map((trade: any) => {
+                        const profit = trade.profit_abs ?? 0;
+                        const profitPct = trade.profit_pct ?? 0;
+                        const isPositive = profit >= 0;
+                        const colorClass = isPositive ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
+                        const Icon = isPositive ? ArrowUp : ArrowDown;
+
+                        return (
+                          <TableRow key={trade.trade_id}>
+                            <TableCell className="font-medium whitespace-nowrap text-xs">{trade.pair}</TableCell>
+                            <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${colorClass}`}>
+                              <div className="flex items-center justify-end gap-1">
+                                <Icon className="h-3 w-3" />
+                                <span>
+                                  {profit.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                  <span className="text-muted-foreground ml-1">({(profitPct * 100).toFixed(2)}%)</span>
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
               ) : (
                   <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
-                      No status data available.
+                      No open trades found in status response.
                   </div>
               )}
             </CardContent>
@@ -371,3 +402,5 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
+
+    
