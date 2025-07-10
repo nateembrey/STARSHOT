@@ -59,12 +59,8 @@ export async function GET(request: Request) {
     console.log(`[${model.toUpperCase()}] Raw data from /status endpoint:`, JSON.stringify(statusApiResponse, null, 2));
 
     // Process OPEN trades from /status endpoint
-    const openTradesSource = statusApiResponse?.trades ?? [];
-    if (!Array.isArray(openTradesSource)) {
-        console.error(`[${model.toUpperCase()}] Fetched open trades status data is not an array.`, openTradesSource);
-        throw new Error('Fetched open trades status data is not an array.');
-    }
-    const openTrades = openTradesSource.map((trade: any) => ({
+    const openTradesSource = statusApiResponse?.trades;
+    const openTrades = Array.isArray(openTradesSource) ? openTradesSource.map((trade: any) => ({
       asset: trade.pair || 'N/A',
       type: trade.is_short ? 'SELL' : 'BUY',
       status: 'Open',
@@ -75,18 +71,14 @@ export async function GET(request: Request) {
       openRate: trade.open_rate ?? 0,
       closeRate: 0,
       amount: trade.amount ?? 0,
-    })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+    })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime()) : [];
 
     // --- DIAGNOSTIC LOGGING ---
     console.log(`[${model.toUpperCase()}] Processed openTrades array:`, JSON.stringify(openTrades, null, 2));
     
     // Process CLOSED trades from /trades endpoint
-    const allTradesSource = tradesApiResponse?.trades ?? [];
-    if (!Array.isArray(allTradesSource)) {
-        console.error(`[${model.toUpperCase()}] Fetched historical trades data is not an array.`, allTradesSource);
-        throw new Error('Fetched historical trades data is not an array.');
-    }
-    const closedTrades = allTradesSource
+    const allTradesSource = tradesApiResponse?.trades;
+    const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
       .filter((trade: any) => trade.close_date_ts !== null)
       .map((trade: any) => ({
         asset: trade.pair || 'N/A',
@@ -100,7 +92,7 @@ export async function GET(request: Request) {
         closeRate: trade.close_rate ?? 0,
         amount: trade.amount ?? 0,
       }))
-      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
+      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime()) : [];
 
     // Calculations based only on the reliable closedTrades list
     const totalTrades = closedTrades.length;
