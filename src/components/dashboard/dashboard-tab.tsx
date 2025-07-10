@@ -141,7 +141,6 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                     <TableHead className="text-xs">Type</TableHead>
                                     <TableHead className="text-xs">Open Rate</TableHead>
                                     <TableHead className="text-xs">Close Rate</TableHead>
-                                    <TableHead className="text-xs">Close Reason</TableHead>
                                     <TableHead className="text-right text-xs">Profit %</TableHead>
                                     <TableHead className="text-right text-xs">Profit</TableHead>
                                 </TableRow>
@@ -162,9 +161,8 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                             <TableCell className="whitespace-nowrap text-xs">
                                                 {trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A'}
                                             </TableCell>
-                                            <TableCell className="text-xs whitespace-nowrap">{trade.closeReason}</TableCell>
-                                            <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${colorClass}`}>
-                                                {trade.profitPercentage?.toFixed(2)}%
+                                            <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
+                                                {trade.profitPercentage?.toFixed(1)}%
                                             </TableCell>
                                             <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
                                                 <span className={colorClass}>
@@ -504,61 +502,65 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
 
-        <Card>
-            <CardHeader className="p-6 md:p-8">
-                <CardTitle className="text-lg md:text-xl">Open Trades</CardTitle>
-            </CardHeader>
-            <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
-              {isLoading ? (
-                  <Skeleton className="h-40 w-full" />
-              ) : openTradesFromStatus.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">Asset</TableHead>
-                        <TableHead className="text-right text-xs">Unrealized P/L</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {openTradesFromStatus.map((trade: any) => {
-                        const profit = trade.profit_abs ?? 0;
-                        const profitPct = trade.profit_pct ?? 0;
-                        const isPositive = profit >= 0;
-                        const colorClass = isPositive ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
-                        const Icon = isPositive ? ArrowUp : ArrowDown;
-
-                        return (
-                          <TableRow key={trade.trade_id}>
-                            <TableCell className="font-medium whitespace-nowrap text-xs">{trade.pair}</TableCell>
-                            <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${colorClass}`}>
-                              <div className="flex items-center justify-end gap-1">
-                                <Icon className="h-3 w-3" />
-                                <span>
-                                  {profit.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                                  <span className="text-muted-foreground ml-1">({(profitPct * 100).toFixed(2)}%)</span>
-                                </span>
-                              </div>
-                            </TableCell>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+                <CardHeader className="p-6 md:p-8">
+                    <CardTitle className="text-lg md:text-xl">Open Trades</CardTitle>
+                </CardHeader>
+                <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
+                  {isLoading ? (
+                      <Skeleton className="h-40 w-full" />
+                  ) : openTradesFromStatus.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Asset</TableHead>
+                            <TableHead className="text-right text-xs">Unrealized P/L</TableHead>
                           </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-              ) : (
-                  <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
-                      No open trades found in status response.
-                  </div>
-              )}
-            </CardContent>
-        </Card>
-        
-        <ClosedTradesTable 
-            title="Recent Closed Trades"
-            description="A history of all closed trades."
-            trades={(data?.closedTrades ?? []).slice(0, 20)}
-            isLoading={isLoading}
-            hasData={!!data && data.closedTrades.length > 0}
-        />
+                        </TableHeader>
+                        <TableBody>
+                          {openTradesFromStatus.map((trade: any) => {
+                            const profit = trade.profit_abs ?? 0;
+                            const profitPct = trade.profit_pct ?? 0;
+                            const isPositive = profit >= 0;
+                            const colorClass = isPositive ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
+                            const Icon = isPositive ? ArrowUp : ArrowDown;
+
+                            return (
+                              <TableRow key={trade.trade_id}>
+                                <TableCell className="font-medium whitespace-nowrap text-xs">{trade.pair}</TableCell>
+                                <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${colorClass}`}>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Icon className="h-3 w-3" />
+                                    <span>
+                                      {profit.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                      <span className="text-muted-foreground ml-1">({(profitPct * 100).toFixed(2)}%)</span>
+                                    </span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                  ) : (
+                      <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
+                          No open trades found in status response.
+                      </div>
+                  )}
+                </CardContent>
+            </Card>
+            
+            <ClosedTradesTable 
+                title="Recent Closed Trades"
+                description="A history of all closed trades."
+                trades={(data?.closedTrades ?? []).slice(0, 20)}
+                isLoading={isLoading}
+                hasData={!!data && data.closedTrades.length > 0}
+            />
+        </div>
     </div>
   );
 }
+
+    
