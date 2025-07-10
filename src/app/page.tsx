@@ -129,11 +129,11 @@ export default function DashboardPage() {
                   <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/>
                 </svg>
                 <h1 className="text-2xl font-bold text-white hidden md:inline" style={{ letterSpacing: '0.3em' }}>
-                  STARSHOT
+                  <span className="hidden md:inline">STARSHOT</span>
                 </h1>
             </div>
             <div className="flex-1 flex justify-center">
-              <TabsList className="grid w-full grid-cols-2 sm:max-w-[280px] rounded-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-[200px] sm:max-w-[240px] rounded-full">
                 <TabsTrigger value="chatgpt" className="rounded-full">
                   CHATGPT
                 </TabsTrigger>
