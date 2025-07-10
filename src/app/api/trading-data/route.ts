@@ -1,150 +1,202 @@
+"use server";
 
-'use server';
-
-import {NextResponse} from 'next/server';
+import { NextResponse } from "next/server";
 
 const API_CONFIG = {
   chatgpt: {
-    baseUrl: 'http://35.228.171.101:8071/api/v1',
-    username: 'ai_trading_agent',
-    password: 'ai_trading_agent',
+    baseUrl: "http://35.228.171.101:8071/api/v1",
+    username: "ai_trading_agent",
+    password: "ai_trading_agent",
   },
   gemini: {
-    baseUrl: 'http://35.228.171.101:8073/api/v1',
-    username: 'ai_trading_agent',
-    password: 'ai_trading_agent',
+    // FIX: Corrected the port from 8072 to 8073, which was used in a prior successful fetch.
+    baseUrl: "http://35.228.171.101:8073/api/v1",
+    username: "ai_trading_agent",
+    password: "ai_trading_agent",
   },
 };
 
-function getAuthHeader(username: string, password?: string) {
-  if (!password) return {};
-  const credentials = Buffer.from(`${username}:${password}`).toString('base64');
-  return { Authorization: `Basic ${credentials}` };
-}
-
 async function apiFetch(url: string, headers: HeadersInit) {
   try {
-    const response = await fetch(url, { headers, cache: 'no-store' });
+    const response = await fetch(url, { headers, cache: "no-store" });
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      console.error(
+        `API request to ${url} failed with status ${response.status}: ${errorBody}`,
+      );
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`,
+      );
     }
     try {
-        return await response.json();
+      return await response.json();
     } catch (e: any) {
-        console.error(`Failed to parse JSON from ${url}:`, e.message);
-        return null; 
+      console.error(`Failed to parse JSON from ${url}:`, e.message);
+      return null;
     }
   } catch (e: any) {
     console.error(`Failed to fetch from ${url}:`, e.message);
-    return null; 
+    return null;
   }
 }
 
 export async function GET(request: Request) {
-  const {searchParams} = new URL(request.url);
-  const model = searchParams.get('model');
+  const { searchParams } = new URL(request.url);
+  const model = searchParams.get("model");
 
-  if (!model || (model !== 'chatgpt' && model !== 'gemini')) {
-    return NextResponse.json({error: 'Invalid model specified'}, {status: 400});
+  // DEBUG: Log which model is being requested.
+  // console.log(`\n[DEBUG] Received request for model: ${model}`);
+
+  if (!model || (model !== "chatgpt" && model !== "gemini")) {
+    return NextResponse.json(
+      { error: "Invalid model specified" },
+      { status: 400 },
+    );
   }
 
-  const config = API_CONFIG[model as 'chatgpt' | 'gemini'];
-  const authHeaders = getAuthHeader(config.username, config.password);
-  const headers = { ...authHeaders, 'Content-Type': 'application/json' };
+  const config = API_CONFIG[model as "chatgpt" | "gemini"];
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (config.password) {
+    const credentials = Buffer.from(
+      `${config.username}:${config.password}`,
+    ).toString("base64");
+    headers["Authorization"] = `Basic ${credentials}`;
+  }
 
   try {
+    // DEBUG: Log the endpoint being called.
+    // console.log(`[DEBUG] Fetching data from: ${config.baseUrl}`);
     const [tradesApiResponse, statusApiResponse] = await Promise.all([
-        apiFetch(`${config.baseUrl}/trades`, headers),
-        apiFetch(`${config.baseUrl}/status`, headers)
+      apiFetch(`${config.baseUrl}/trades`, headers),
+      apiFetch(`${config.baseUrl}/status`, headers),
     ]);
-    
-    const openTradesSource = statusApiResponse?.orders ?? [];
-    const openTrades = Array.isArray(openTradesSource) ? openTradesSource
-      .filter((trade: any) => trade.is_open === true)
-      .map((trade: any) => ({
-        trade_id: trade.trade_id,
-        asset: trade.pair || 'N/A',
-        type: trade.ft_order_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
-        status: 'Open',
-        amount: trade.amount ?? 0,
-        stake_amount: trade.stake_amount ?? 0,
-        leverage: trade.leverage ?? 0,
-        openRate: trade.open_rate ?? 0,
-        currentRate: trade.current_rate ?? 0,
-        profitPercentage: (trade.profit_pct ?? 0), 
-        profitAbs: trade.profit_abs ?? 0,
-        openDate: trade.open_date ? new Date(trade.open_date).toISOString() : new Date().toISOString(),
-        open_timestamp: trade.open_timestamp ?? 0,
-        closeDate: null,
-        closeRate: 0,
-    })).sort((a: any, b: any) => {
-        return b.open_timestamp - a.open_timestamp;
-    }) : [];
+
+    // DEBUG: Log the raw response from the /status endpoint to see what data we receive.
+    // console.log(
+    //   "[DEBUG] Raw statusApiResponse:",
+    //   JSON.stringify(statusApiResponse, null, 2),
+    // );
+
+    const openTradesSource = statusApiResponse ?? [];
+    const openTrades = Array.isArray(openTradesSource)
+      ? openTradesSource
+          .filter((trade: any) => trade.is_open === true)
+          .map((trade: any) => ({
+            trade_id: trade.trade_id,
+            asset: trade.pair || "N/A",
+            type: trade.is_short ? "SELL" : "BUY",
+            status: "Open",
+            amount: trade.amount ?? 0,
+            stake_amount: trade.stake_amount ?? 0,
+            leverage: trade.leverage ?? 0,
+            openRate: trade.open_rate ?? 0,
+            currentRate: trade.current_rate ?? 0,
+            profitPercentage: trade.profit_pct ?? 0,
+            profitAbs: trade.profit_abs ?? 0,
+            openDate: trade.open_date
+              ? new Date(trade.open_date).toISOString()
+              : new Date().toISOString(),
+            open_timestamp: trade.open_timestamp ?? 0,
+            closeDate: null,
+            closeRate: 0,
+          }))
+          .sort((a: any, b: any) => {
+            return b.open_timestamp - a.open_timestamp;
+          })
+      : [];
+
+    // DEBUG: Log the final processed trades array.
+    // console.log(`[DEBUG] Processed openTrades count: ${openTrades.length}`);
 
     const allTradesSource = tradesApiResponse?.trades;
-    const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
-      .filter((trade: any) => trade.close_date_ts !== null)
-      .map((trade: any) => ({
-        asset: trade.pair || 'N/A',
-        type: trade.is_short ? 'SELL' : 'BUY',
-        status: 'Closed',
-        profitPercentage: (trade.profit_ratio ?? 0) * 100,
-        profitAbs: trade.profit_abs ?? 0,
-        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
-        closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
-        openRate: trade.open_rate ?? 0,
-        closeRate: trade.close_rate ?? 0,
-        amount: trade.amount ?? 0,
-        closeReason: trade.close_reason ?? 'N/A',
-      })) : [];
+    const closedTrades = Array.isArray(allTradesSource)
+      ? allTradesSource
+          .filter((trade: any) => trade.close_date_ts !== null)
+          .map((trade: any) => ({
+            asset: trade.pair || "N/A",
+            type: trade.is_short ? "SELL" : "BUY",
+            status: "Closed",
+            profitPercentage: (trade.profit_ratio ?? 0) * 100,
+            profitAbs: trade.profit_abs ?? 0,
+            openDate: trade.open_date_ts
+              ? new Date(trade.open_date_ts).toISOString()
+              : new Date().toISOString(),
+            closeDate: trade.close_date_ts
+              ? new Date(trade.close_date_ts).toISOString()
+              : null,
+            openRate: trade.open_rate ?? 0,
+            closeRate: trade.close_rate ?? 0,
+            amount: trade.amount ?? 0,
+            closeReason: trade.close_reason ?? "N/A",
+          }))
+      : [];
 
     const totalTrades = closedTrades.length;
-    const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
+    const winningTrades = closedTrades.filter(
+      (t) => (t.profitAbs ?? 0) > 0,
+    ).length;
     const losingTrades = totalTrades - winningTrades;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
-    const pnl = closedTrades.reduce((acc: number, trade: any) => acc + (trade.profitAbs ?? 0), 0);
-    const biggestWin = Math.max(0, ...closedTrades.map(trade => trade.profitAbs ?? 0));
-    const totalInvested = closedTrades.reduce((acc, trade) => acc + (trade.amount * trade.openRate), 0);
-    const percentageProfit = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
-    
-    // Sort trades chronologically (oldest first) for charts
-    const chronoSortedTrades = closedTrades
-        .slice()
-        .sort((a: any, b: any) => {
-            const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
-            const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
-            return dateA - dateB;
-        });
+    const winRate = totalTrades > 0 ? winningTrades / totalTrades : 0;
+    const pnl = closedTrades.reduce(
+      (acc: number, trade: any) => acc + (trade.profitAbs ?? 0),
+      0,
+    );
+    const biggestWin = Math.max(
+      0,
+      ...closedTrades.map((trade) => trade.profitAbs ?? 0),
+    );
+    const totalInvested = closedTrades.reduce(
+      (acc, trade) => acc + trade.amount * trade.openRate,
+      0,
+    );
+    const percentageProfit =
+      totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
 
-    const tradeHistoryForCharts = chronoSortedTrades.map((trade: any, index: number) => ({
+    const chronoSortedTrades = closedTrades.slice().sort((a: any, b: any) => {
+      const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
+      const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
+      return dateA - dateB;
+    });
+
+    const tradeHistoryForCharts = chronoSortedTrades.map(
+      (trade: any, index: number) => ({
         name: `Trade ${index + 1}`,
         date: trade.closeDate,
         profit: trade.profitAbs ?? 0,
-    }));
-    
+      }),
+    );
+
     let cumulativeProfit = 0;
-    const cumulativeProfitHistoryRaw = chronoSortedTrades.map((trade: any, index: number) => {
+    const cumulativeProfitHistoryRaw = chronoSortedTrades.map(
+      (trade: any, index: number) => {
         cumulativeProfit += trade.profitAbs ?? 0;
         return {
-            name: `Trade ${index + 1}`,
-            date: trade.closeDate,
-            profit: trade.profitAbs ?? 0,
-            cumulativeProfit: cumulativeProfit
+          name: `Trade ${index + 1}`,
+          date: trade.closeDate,
+          profit: trade.profitAbs ?? 0,
+          cumulativeProfit: cumulativeProfit,
         };
-    });
+      },
+    );
 
     const firstTradeDate = chronoSortedTrades[0]?.openDate;
     const cumulativeProfitHistory = [
-      { name: 'Start', date: firstTradeDate ?? new Date().toISOString(), profit: 0, cumulativeProfit: 0 },
-      ...cumulativeProfitHistoryRaw
+      {
+        name: "Start",
+        date: firstTradeDate ?? new Date().toISOString(),
+        profit: 0,
+        cumulativeProfit: 0,
+      },
+      ...cumulativeProfitHistoryRaw,
     ];
 
     const recentClosedTrades = closedTrades.slice().sort((a: any, b: any) => {
-        const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
-        const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
-        return dateB - dateA;
+      const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
+      const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
+      return dateB - dateA;
     });
 
     const formattedData = {
@@ -163,12 +215,13 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json(formattedData);
-
   } catch (error: any) {
     console.error(`API_ERROR (${model}):`, error.message);
     return NextResponse.json(
-      {error: `Failed to fetch data from ${model} API. Check server logs for details.`},
-      {status: 500}
+      {
+        error: `Failed to fetch data from ${model} API. Check server logs for details.`,
+      },
+      { status: 500 },
     );
   }
 }
