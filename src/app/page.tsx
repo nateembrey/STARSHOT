@@ -95,17 +95,18 @@ export default function DashboardPage() {
   }, [fetchDataForModel]);
 
   useEffect(() => {
-    fetchAllData(true); // Initial fetch right away
+    // Initial fetch to populate the page without waiting for visibility.
+    fetchAllData(true);
   }, [fetchAllData]);
 
   useEffect(() => {
     if (isVisible) {
-      // Fetch immediately when tab becomes visible
+      // Fetch immediately when tab becomes visible if it's not the initial load
       fetchAllData(false);
 
       const intervalId = setInterval(() => {
         fetchAllData(false);
-      }, 15000);
+      }, 15000); // 15 seconds
 
       return () => {
         clearInterval(intervalId);
@@ -145,12 +146,6 @@ export default function DashboardPage() {
           </div>
         </header>
         <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-           <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-              <p className="text-muted-foreground">
-                An overview of each bot's trading performance.
-              </p>
-            </div>
           <TabsContent value="chatgpt" className="space-y-4">
             <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
           </TabsContent>

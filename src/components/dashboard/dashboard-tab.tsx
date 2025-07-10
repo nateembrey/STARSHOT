@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Activity, Percent } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import {
   Area,
   Bar,
@@ -129,32 +129,35 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {trades.map((trade, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell className="font-medium whitespace-nowrap">{trade.asset}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className={`text-xs ${trade.type === 'BUY' ? 'bg-blue-900/50 text-blue-300' : 'bg-purple-900/50 text-purple-300'}`}>
-                                                {trade.type}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{trade.amount.toFixed(4)}</TableCell>
-                                        <TableCell>{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                                        <TableCell className="whitespace-nowrap">
-                                          {isClosedTrades 
-                                            ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') 
-                                            : (trade.openDate && new Date(trade.openDate).getTime() > 0 ? format(new Date(trade.openDate), 'PPp') : 'N/A')}
-                                        </TableCell>
-                                        <TableCell className="text-right font-semibold whitespace-nowrap">
-                                            {isClosedTrades ? (
-                                                <span className={trade.profitAbs >= 0 ? 'text-green-400' : 'text-red-400'}>
-                                                    {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                                                </span>
-                                            ) : (
-                                                <Badge variant="outline">{trade.status}</Badge>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {trades.map((trade, index) => {
+                                    const openDate = new Date(trade.openDate);
+                                    return (
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium whitespace-nowrap">{trade.asset}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className={`text-xs ${trade.type === 'BUY' ? 'bg-blue-900/50 text-blue-300' : 'bg-purple-900/50 text-purple-300'}`}>
+                                                    {trade.type}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{trade.amount.toFixed(4)}</TableCell>
+                                            <TableCell>{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                            {isClosedTrades 
+                                                ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') 
+                                                : (isValid(openDate) ? format(openDate, 'PPp') : 'N/A')}
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold whitespace-nowrap">
+                                                {isClosedTrades ? (
+                                                    <span className={trade.profitAbs >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                                        {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                                    </span>
+                                                ) : (
+                                                    <Badge variant="outline">{trade.status}</Badge>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     </div>
@@ -194,37 +197,53 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
     </Card>
 );
 
-const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => (
-    <Card>
-        <CardHeader className="p-4">
-            <CardTitle className="text-lg">Cumulative Profit Over Time</CardTitle>
-            <CardDescription>Tracking the growth of the total profit.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-            {isLoading ? (
-                <Skeleton className="h-[250px] w-full" />
-            ) : !hasData || data.length === 0 ? (
-                <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
-            ) : (
-                <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit', color: 'hsl(var(--accent))' } }} className="h-[250px] w-full">
-                    <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                        <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
-                        <defs>
-                            <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke="hsl(var(--accent))" fillOpacity={1} fill="url(#colorCumulative)" />
-                    </AreaChart>
-                </ChartContainer>
-            )}
-        </CardContent>
-    </Card>
-);
+const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => {
+    const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
+    const isPositive = finalProfit >= 0;
+
+    return (
+        <Card>
+            <CardHeader className="p-4">
+                <CardTitle className="text-lg">Cumulative Profit Over Time</CardTitle>
+                <CardDescription>Tracking the growth of the total profit.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                {isLoading ? (
+                    <Skeleton className="h-[250px] w-full" />
+                ) : !hasData || data.length === 0 ? (
+                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
+                ) : (
+                    <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit' } }} className="h-[250px] w-full">
+                        <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                            <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
+                            <defs>
+                                <linearGradient id="gradient-green" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="gradient-red" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <Area 
+                                type="monotone" 
+                                dataKey="cumulativeProfit" 
+                                name="Cumulative Profit" 
+                                stroke={isPositive ? "#10B981" : "#F43F5E"}
+                                fillOpacity={1} 
+                                fill={isPositive ? "url(#gradient-green)" : "url(#gradient-red)"} 
+                            />
+                        </AreaChart>
+                    </ChartContainer>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 export function DashboardTab({ modelName, data, isLoading }: { modelName: string, data: TradingData | null, isLoading: boolean }) {
   const hasData = !!data && data.totalTrades > 0;
