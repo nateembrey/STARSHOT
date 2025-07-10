@@ -1063,10 +1063,10 @@ export function DashboardTab({
                                             Type
                                         </TableHead>
                                         <TableHead className="text-right text-xs">
-                                            Unrealized PnL
+                                            PnL
                                         </TableHead>
                                         <TableHead className="text-right text-xs">
-                                            Unrealized PnL %
+                                            PnL %
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
