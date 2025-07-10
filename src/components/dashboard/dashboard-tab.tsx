@@ -31,7 +31,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  Rectangle,
+  Cell,
   ReferenceLine,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -72,7 +72,7 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>{title}</CardTitle>
+                <CardTitle className="text-lg">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -103,7 +103,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{title}</CardTitle>
+                <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0">
@@ -126,7 +126,6 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                     <TableHead className="text-xs">Open Rate</TableHead>
                                     <TableHead className="text-xs">{isClosedTrades ? "Close Rate" : "Open Date"}</TableHead>
                                     <TableHead className="text-right text-xs">{isClosedTrades ? "Profit" : "Status"}</TableHead>
-
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -171,7 +170,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
 const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => (
     <Card>
         <CardHeader>
-            <CardTitle>Profit/Loss per Trade</CardTitle>
+            <CardTitle className="text-lg">Profit/Loss per Trade</CardTitle>
             <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
         </CardHeader>
         <CardContent className="p-2 pt-0">
@@ -187,15 +186,11 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                        <Bar
-                          dataKey="profit"
-                          radius={2}
-                          fill={(entry) =>
-                            entry.profit >= 0
-                              ? 'hsl(var(--chart-2))'
-                              : 'hsl(var(--accent))'
-                          }
-                        />
+                        <Bar dataKey="profit" radius={2}>
+                          {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
+                          ))}
+                        </Bar>
                     </BarChart>
                 </ChartContainer>
             )}
@@ -213,7 +208,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Cumulative Profit</CardTitle>
+                <CardTitle className="text-lg">Cumulative Profit</CardTitle>
                 <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0">
