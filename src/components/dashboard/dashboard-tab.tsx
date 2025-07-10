@@ -86,11 +86,11 @@ type PredictionDuration = '1W' | '1M' | '3M' | '1Y';
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-8">
-                <CardTitle className="text-xl">{title}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-6 md:p-8">
+                <CardTitle className="text-lg md:text-xl">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="p-8 pt-0">
+            <CardContent className="p-6 pt-0 md:p-8 md:pt-0">
                 <div className={cn(!isLoading && 'animate-content-in')}>
                     {isLoading ? (
                         <>
@@ -99,12 +99,12 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                         </>
                     ) : hasData ? (
                         <>
-                            <div className="text-6xl font-bold tracking-tight">{value}</div>
+                            <div className="text-4xl md:text-6xl font-bold tracking-tight">{value}</div>
                             {subtext && <p className="text-xs text-muted-foreground mt-4">{subtext}</p>}
                         </>
                     ) : (
                         <>
-                            <div className="text-6xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
+                            <div className="text-4xl md:text-6xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
                             {subtext && <p className="text-xs text-muted-foreground/50 mt-4">No data available</p>}
                         </>
                     )}
@@ -117,11 +117,11 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
 const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
-            <CardHeader className="p-8">
-                <CardTitle className="text-xl">{title}</CardTitle>
+            <CardHeader className="p-6 md:p-8">
+                <CardTitle className="text-lg md:text-xl">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
-            <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
+            <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
                 {isLoading ? (
                     <div className="space-y-2 px-2">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -177,10 +177,10 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
 
 const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: ChartData[], isLoading: boolean, hasData: boolean, biggestWin: number }) => (
     <Card>
-        <CardHeader className="p-8">
+        <CardHeader className="p-6 md:p-8">
             <div className="flex justify-between items-start">
                 <div>
-                    <CardTitle className="text-xl">Profit/Loss per Trade</CardTitle>
+                    <CardTitle className="text-lg md:text-xl">Profit/Loss per Trade</CardTitle>
                     <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
                 </div>
                 {hasData && (
@@ -193,7 +193,7 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
                 )}
             </div>
         </CardHeader>
-        <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
+        <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
             {isLoading ? (
                 <Skeleton className="h-[200px] w-full" />
             ) : !hasData || data.length === 0 ? (
@@ -242,7 +242,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
     
     const handlePredict = async (duration: PredictionDuration) => {
-        if (!data || data.length < 2) return;
+        if (!data) return;
         setIsPredicting(true);
         setPredictionDuration(duration);
         setPrediction(null);
@@ -308,13 +308,13 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const gradientId = isPositive ? "gradient-green" : "gradient-red";
     
     return (
-        <div className="relative perspective h-[364px]">
+        <div className="relative perspective h-[420px] md:h-[364px]">
             <div className={cn("w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
                 {/* Front Face */}
                 <Card className="absolute w-full h-full backface-hidden">
-                    <CardHeader className="p-8 flex flex-row items-start justify-between">
+                    <CardHeader className="p-6 md:p-8 flex flex-row items-start justify-between">
                        <div>
-                            <CardTitle className="text-xl">Cumulative Profit</CardTitle>
+                            <CardTitle className="text-lg md:text-xl">Cumulative Profit</CardTitle>
                             <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={handleFlip} disabled={isLoading || !hasData}>
@@ -322,7 +322,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             PREDICT
                         </Button>
                     </CardHeader>
-                    <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
+                    <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
                         {isLoading ? (
                             <Skeleton className="h-[200px] w-full" />
                         ) : !hasData || data.length < 2 ? (
@@ -350,9 +350,9 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 
                 {/* Back Face */}
                 <Card className="absolute w-full h-full backface-hidden rotate-y-180">
-                     <CardHeader className="p-8 flex flex-row items-start justify-between">
+                     <CardHeader className="p-6 md:p-8 flex flex-row items-start justify-between">
                        <div>
-                            <CardTitle className="text-xl">Profit Forecast</CardTitle>
+                            <CardTitle className="text-lg md:text-xl">Profit Forecast</CardTitle>
                             {confidenceScore !== null && (
                                 <CardDescription className="text-xs">
                                     Forecast Confidence: <span className="font-bold">{confidenceScore.toFixed(0)}%</span>
@@ -364,7 +364,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             BACK
                         </Button>
                     </CardHeader>
-                    <CardContent className="p-8 pt-0">
+                    <CardContent className="p-6 pt-0 md:p-8 md:pt-0">
                          <div className="flex items-center justify-center space-x-2 mb-4">
                             {(['1W', '1M', '3M', '1Y'] as PredictionDuration[]).map(d => (
                                 <Button key={d} size="sm" variant={predictionDuration === d ? 'secondary' : 'ghost'} onClick={() => handlePredict(d)} disabled={isPredicting}>
@@ -457,10 +457,10 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
         </div>
 
         <Card>
-            <CardHeader className="p-8">
-                <CardTitle className="text-xl">Open Trades</CardTitle>
+            <CardHeader className="p-6 md:p-8">
+                <CardTitle className="text-lg md:text-xl">Open Trades</CardTitle>
             </CardHeader>
-            <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
+            <CardContent className={cn('p-6 pt-0 md:p-8 md:pt-0', !isLoading && 'animate-content-in')}>
               {isLoading ? (
                   <Skeleton className="h-40 w-full" />
               ) : openTradesFromStatus.length > 0 ? (
