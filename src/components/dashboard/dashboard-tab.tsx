@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -22,142 +23,116 @@ import {
   ArrowUp,
   ArrowDown,
   TrendingUp,
+  Percent,
 } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { useToast } from '@/hooks/use-toast';
 
 // Data structure we expect from the API
 interface TradingData {
-  totalRevenue: string;
-  pnl: string;
-  pnlPercentage: string;
-  trades: string;
-  winRate: string;
+  totalRevenue: number;
+  pnl: number;
+  trades: number;
+  winRate: number;
+  pnlPercentage: number;
   recentTrades: {
     asset: string;
     type: string;
     status: string;
     profit: string;
+    profitAbs: number | null;
   }[];
 }
 
 export function DashboardTab({ modelName }: { modelName: string }) {
   const [data, setData] = React.useState<TradingData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      setError(null);
       try {
         const response = await fetch(`/api/trading-data?model=${modelName.toLowerCase()}`);
         if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.statusText}`);
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to fetch data: ${response.statusText}`);
         }
         const result: TradingData = await response.json();
         setData(result);
       } catch (err: any) {
-        setError(err.message);
-        // On error, use mock data to keep the UI functional
-        setData(getMockData(modelName)); 
+        console.error(`Error fetching ${modelName} data:`, err);
+        toast({
+            variant: "destructive",
+            title: `Error fetching ${modelName} data`,
+            description: err.message,
+        });
+        setData(null); // Clear data on error
       } finally {
         setIsLoading(false);
       }
     }
     fetchData();
-  }, [modelName]);
+  }, [modelName, toast]);
 
-  const isGpt = modelName === 'ChatGPT';
-  
-  // Use fetched data if available, otherwise fallback to mock data (or initial empty state)
-  const displayData = data || getMockData(modelName);
+  const displayData = data;
 
-  const chartData = isGpt ? [
-    { month: 'Jan', gpt: 4000, gemini: 2400 },
-    { month: 'Feb', gpt: 3000, gemini: 1398 },
-    { month: 'Mar', gpt: 2000, gemini: 9800 },
-    { month: 'Apr', gpt: 2780, gemini: 3908 },
-    { month: 'May', gpt: 1890, gemini: 4800 },
-    { month: 'Jun', gpt: 2390, gemini: 3800 },
-    { month: 'Jul', gpt: 3490, gemini: 4300 },
-    ] : [
-    { month: 'Jan', gpt: 3800, gemini: 2600 },
-    { month: 'Feb', gpt: 3200, gemini: 1598 },
-    { month: 'Mar', gpt: 2200, gemini: 8800 },
-    { month: 'Apr', gpt: 2980, gemini: 4108 },
-    { month: 'May', gpt: 2090, gemini: 5200 },
-    { month: 'Jun', gpt: 2590, gemini: 4000 },
-    { month: 'Jul', gpt: 3690, gemini: 4500 },
-  ];
-
-  const chartConfig = {
-    gpt: {
-      label: 'ChatGPT',
-      color: 'hsl(var(--chart-1))',
-    },
-    gemini: {
-      label: 'Gemini',
-      color: 'hsl(var(--chart-2))',
-    },
-  };
-  
-  const singleModelChartConfig = isGpt ? {
-    performance: {
-      label: "ChatGPT",
-      color: 'hsl(var(--chart-1))',
+  const renderCardContent = (value: React.ReactNode, subtext?: string) => {
+    if (isLoading) {
+      return (
+        <>
+          <Skeleton className="h-7 w-3/4" />
+          <Skeleton className="h-4 w-1/2 mt-1" />
+        </>
+      )
     }
-  } : {
-    performance: {
-      label: "Gemini",
-      color: 'hsl(var(--chart-2))',
+     if (displayData === null) {
+        return (
+            <>
+                <div className="text-xl font-bold text-muted-foreground/50">N/A</div>
+                <p className="text-xs text-muted-foreground/50">No data available</p>
+            </>
+        )
     }
-  };
-
-  const singleModelChartData = chartData.map(d => ({ month: d.month, performance: isGpt ? d.gpt : d.gemini }));
-
-  if (error) {
     return (
-        <div className="flex items-center justify-center h-full">
-            <Card className="m-4 p-4 bg-destructive/10 border-destructive">
-                <CardHeader>
-                    <CardTitle className="text-destructive">Error Fetching Data</CardTitle>
-                    <CardDescription className="text-destructive/80">
-                        Could not fetch live trading data. Displaying mock data instead.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-destructive">{error}</p>
-                </CardContent>
-            </Card>
-        </div>
+        <>
+            <div className="text-xl font-bold">{value}</div>
+            {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
+        </>
     )
   }
 
+  const pnlValue = displayData?.pnl ?? 0;
+  const pnlColor = pnlValue >= 0 ? 'text-green-500' : 'text-red-500';
+
   return (
-    <>
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-             {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.totalRevenue}</div>}
-             {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">{displayData.pnl} from last month</p>}
+             {renderCardContent(
+                displayData?.totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+                `Initial + P&L`
+             )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-sm font-medium">P&L ({modelName})</CardTitle>
+            <CardTitle className="text-sm font-medium">Total P&L</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className={`text-xl font-bold ${displayData.pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{displayData.pnl}</div>}
-            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> :<p className="text-xs text-muted-foreground">{displayData.pnlPercentage} vs last month</p>}
+            {renderCardContent(
+                <span className={pnlColor}>
+                    {pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                </span>,
+                displayData ? `${(displayData.pnlPercentage * 100).toFixed(2)}% of total trades` : undefined
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -166,94 +141,41 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.trades}</div>}
-            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">+180 since last hour</p>}
+            {renderCardContent(
+                displayData?.trades.toLocaleString(),
+                "Completed trades"
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.winRate}</div>}
-            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">+1.2% since yesterday</p>}
+            {renderCardContent(
+                displayData ? `${(displayData.winRate * 100).toFixed(1)}%` : "0%",
+                "Based on closed trades"
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="w-full">
-        <CardHeader className="p-4">
-          <CardTitle className="text-lg">{modelName} Performance</CardTitle>
-          <CardDescription>January - July</CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2 pr-4 pb-4">
-          <ChartContainer config={singleModelChartConfig} className="h-[150px] w-full">
-              <LineChart data={singleModelChartData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis 
-                      dataKey="month" 
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      />
-                  <YAxis 
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tickFormatter={(value) => `$${value / 1000}k`}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line dataKey="performance" type="monotone" stroke={`var(--color-performance)`} strokeWidth={2} dot={false} name={modelName} />
-              </LineChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-          <CardHeader className="p-4">
-            <CardTitle className="text-lg">Performance Comparison</CardTitle>
-            <CardDescription>ChatGPT vs. Gemini</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2 pr-4 pb-4">
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <LineChart data={chartData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis 
-                        dataKey="month" 
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        />
-                    <YAxis 
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        tickFormatter={(value) => `$${value / 1000}k`}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Line dataKey="gpt" type="monotone" stroke="var(--color-gpt)" strokeWidth={2} dot={false} name="ChatGPT" />
-                    <Line dataKey="gemini" type="monotone" stroke="var(--color-gemini)" strokeWidth={2} dot={false} name="Gemini" />
-                </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-3">
+      <Card>
           <CardHeader className="p-4">
             <CardTitle className="text-lg">Recent Trades</CardTitle>
             <CardDescription>
-              {`The latest trades executed by ${modelName}.`}
+              {`The 5 most recent trades executed by ${modelName}.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
              {isLoading ? (
                 <div className="space-y-2">
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
+                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+             ) : !displayData || displayData.recentTrades.length === 0 ? (
+                <div className="flex items-center justify-center h-24 text-muted-foreground">
+                    No recent trades found.
                 </div>
              ) : (
                 <Table>
@@ -262,7 +184,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                     <TableHead className="h-10 px-2">Asset</TableHead>
                     <TableHead className="h-10 px-2">Type</TableHead>
                     <TableHead className="h-10 px-2">Status</TableHead>
-                    <TableHead className="h-10 px-2 text-right">Profit</TableHead>
+                    <TableHead className="h-10 px-2 text-right">Profit %</TableHead>
+                    <TableHead className="h-10 px-2 text-right">Profit (USD)</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -272,10 +195,10 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                         <TableCell className="p-2">
                         <Badge
                             variant={'secondary'}
-                            className={`flex items-center gap-1 w-fit border-transparent ${
+                            className={`flex items-center gap-1 w-fit border-transparent text-xs ${
                             trade.type === 'BUY'
-                                ? 'bg-muted/70 text-card-foreground hover:bg-muted/80'
-                                : 'bg-black text-white hover:bg-black/80'
+                                ? 'bg-blue-900/50 text-blue-300 hover:bg-blue-900/80'
+                                : 'bg-purple-900/50 text-purple-300 hover:bg-purple-900/80'
                             }`}
                         >
                             {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -289,8 +212,11 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                                 {trade.status}
                             </Badge>
                         </TableCell>
-                        <TableCell className={`p-2 text-right font-semibold ${trade.profit === 'Pending' ? 'text-muted-foreground' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                        {trade.profit}
+                        <TableCell className={`p-2 text-right font-semibold ${trade.profit === 'Pending' ? 'text-muted-foreground' : parseFloat(trade.profit) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {trade.profit}
+                        </TableCell>
+                         <TableCell className={`p-2 text-right font-semibold ${trade.profitAbs === null ? 'text-muted-foreground' : (trade.profitAbs ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {trade.profitAbs === null ? 'N/A' : trade.profitAbs.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                         </TableCell>
                     </TableRow>
                     ))}
@@ -299,32 +225,6 @@ export function DashboardTab({ modelName }: { modelName: string }) {
              )}
           </CardContent>
         </Card>
-      </div>
-    </>
+    </div>
   );
-}
-
-
-function getMockData(modelName: string): TradingData {
-  const isGpt = modelName === 'ChatGPT';
-  return {
-    totalRevenue: isGpt ? '$45,231.89' : '$39,121.42',
-    pnl: isGpt ? '+$2,501.32' : '+$1,890.12',
-    pnlPercentage: isGpt ? '+20.1%' : '+18.5%',
-    trades: isGpt ? '1,230' : '1,150',
-    winRate: isGpt ? '72.5%' : '70.1%',
-    recentTrades: isGpt ? [
-      { asset: 'BTC/USD', type: 'BUY', profit: '+$543.21', status: 'Closed' },
-      { asset: 'ETH/USD', type: 'SELL', profit: '+$1,201.50', status: 'Closed' },
-      { asset: 'SOL/USD', type: 'BUY', profit: '-$89.30', status: 'Closed' },
-      { asset: 'ADA/USD', type: 'BUY', profit: 'Pending', status: 'Open' },
-      { asset: 'XRP/USD', type: 'SELL', profit: '+$231.98', status: 'Closed' },
-    ] : [
-      { asset: 'BTC/USD', type: 'BUY', profit: '+$443.21', status: 'Closed' },
-      { asset: 'ETH/USD', type: 'SELL', profit: '+$1,101.50', status: 'Closed' },
-      { asset: 'DOGE/USD', type: 'BUY', profit: '+$1500.00', status: 'Closed' },
-      { asset: 'LINK/USD', type: 'BUY', profit: 'Pending', status: 'Open' },
-      { asset: 'AVAX/USD', type: 'BUY', profit: '-$112.50', status: 'Closed' },
-    ],
-  };
 }
