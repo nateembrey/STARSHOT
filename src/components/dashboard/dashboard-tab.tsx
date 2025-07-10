@@ -186,7 +186,11 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                        <Bar dataKey="profit" radius={2}>
+                        <Bar 
+                          dataKey="profit" 
+                          radius={2}
+                          fill="var(--color-profit)"
+                        >
                             {data.map((entry, index) => (
                                 <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
                             ))}
@@ -268,10 +272,10 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   return (
     <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
+            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
