@@ -97,6 +97,7 @@ export async function GET(request: Request) {
         openRate: trade.open_rate ?? 0,
         closeRate: trade.close_rate ?? 0,
         amount: trade.amount ?? 0,
+        closeReason: trade.close_reason ?? 'N/A',
       })) : [];
 
     const totalTrades = closedTrades.length;

@@ -53,6 +53,7 @@ interface Trade {
     profitAbs: number;
     closeDate: string | null;
     closeRate: number;
+    closeReason: string;
     trade_id?: number;
     stake_amount?: number;
     leverage?: number;
@@ -138,14 +139,17 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                 <TableRow>
                                     <TableHead className="text-xs">Asset</TableHead>
                                     <TableHead className="text-xs">Type</TableHead>
-                                    <TableHead className="text-xs">Amount</TableHead>
                                     <TableHead className="text-xs">Open Rate</TableHead>
                                     <TableHead className="text-xs">Close Rate</TableHead>
+                                    <TableHead className="text-xs">Close Reason</TableHead>
+                                    <TableHead className="text-right text-xs">Profit %</TableHead>
                                     <TableHead className="text-right text-xs">Profit</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {trades.map((trade, index) => {
+                                    const isProfit = trade.profitAbs >= 0;
+                                    const colorClass = isProfit ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
                                     return (
                                         <TableRow key={index}>
                                             <TableCell className="font-medium whitespace-nowrap text-xs">{trade.asset}</TableCell>
@@ -154,13 +158,16 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                                     {trade.type}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-xs">{trade.amount.toFixed(4)}</TableCell>
                                             <TableCell className="text-xs">{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
                                             <TableCell className="whitespace-nowrap text-xs">
                                                 {trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A'}
                                             </TableCell>
+                                            <TableCell className="text-xs whitespace-nowrap">{trade.closeReason}</TableCell>
+                                            <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${colorClass}`}>
+                                                {trade.profitPercentage?.toFixed(2)}%
+                                            </TableCell>
                                             <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
-                                                <span className={trade.profitAbs >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]'}>
+                                                <span className={colorClass}>
                                                     {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                                                 </span>
                                             </TableCell>
