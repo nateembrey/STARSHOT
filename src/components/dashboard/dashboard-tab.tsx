@@ -301,7 +301,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                         className={`flex items-center gap-1 w-fit border-transparent ${
                           trade.type === 'BUY'
                             ? 'bg-muted text-card-foreground hover:bg-muted/80'
-                            : 'bg-card text-muted-foreground hover:bg-card/80'
+                            : 'bg-black text-white hover:bg-black/80'
                         }`}
                       >
                         {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -310,7 +310,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                     </TableCell>
                     <TableCell className="p-2">
                         <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}
-                           className={trade.status === 'Open' ? 'border-accent text-accent' : ''}
+                           className={trade.status === 'Open' ? 'border-accent text-foreground' : ''}
                         >
                             {trade.status}
                         </Badge>
