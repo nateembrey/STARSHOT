@@ -60,18 +60,20 @@ export async function GET(request: Request) {
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
-    const openTradesSource = statusApiResponse?.trades;
-    const openTrades = Array.isArray(openTradesSource) ? openTradesSource.map((trade: any) => ({
-      asset: trade.pair || 'N/A',
-      type: trade.is_short ? 'SELL' : 'BUY',
-      status: 'Open',
-      profitPercentage: 0,
-      profitAbs: 0,
-      openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
-      closeDate: null,
-      openRate: trade.open_rate ?? 0,
-      closeRate: 0,
-      amount: trade.amount ?? 0,
+    const openTradesSource = statusApiResponse?.orders;
+    const openTrades = Array.isArray(openTradesSource) ? openTradesSource
+      .filter((trade: any) => trade.is_open)
+      .map((trade: any) => ({
+        asset: trade.pair || 'N/A',
+        type: trade.ft_order_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
+        status: 'Open',
+        profitPercentage: 0,
+        profitAbs: 0,
+        openDate: trade.order_timestamp ? new Date(trade.order_timestamp).toISOString() : new Date().toISOString(),
+        closeDate: null,
+        openRate: trade.safe_price ?? 0,
+        closeRate: 0,
+        amount: trade.amount ?? 0,
     })).sort((a: any, b: any) => {
         const dateA = a.openDate ? new Date(a.openDate).getTime() : 0;
         const dateB = b.openDate ? new Date(b.openDate).getTime() : 0;
