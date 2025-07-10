@@ -60,9 +60,9 @@ export async function GET(request: Request) {
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
-    const openTradesSource = statusApiResponse?.orders;
-    const openTrades = Array.isArray(openTradesSource) ? openTradesSource
-      .filter((trade: any) => trade.is_open)
+    const openTradesSource = statusApiResponse?.orders ?? [];
+    const openTrades = openTradesSource
+      .filter((trade: any) => trade.is_open === true)
       .map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.ft_order_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
         const dateA = a.openDate ? new Date(a.openDate).getTime() : 0;
         const dateB = b.openDate ? new Date(b.openDate).getTime() : 0;
         return dateB - dateA;
-    }) : [];
+    });
 
     const allTradesSource = tradesApiResponse?.trades;
     const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
