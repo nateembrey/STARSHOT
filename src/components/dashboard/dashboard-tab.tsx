@@ -127,55 +127,6 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                     <CardTitle className="text-lg">{title}</CardTitle>
                     <CardDescription className="text-xs">{description}</CardDescription>
                 </CardHeader>
-                <CardContent className="p-2 pt-0">
-                     {isLoading ? (
-                        <div className="space-y-2 px-2">
-                            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-                        </div>
-                    ) : !hasData ? (
-                        <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
-                            {isLoading ? 'Loading...' : 'No open trades found.'}
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="text-xs">ID</TableHead>
-                                        <TableHead className="text-xs">Pair</TableHead>
-                                        <TableHead className="text-xs">Amount</TableHead>
-                                        <TableHead className="text-xs">Stake Amount</TableHead>
-                                        <TableHead className="text-xs">Open Rate</TableHead>
-                                        <TableHead className="text-xs">Current Rate</TableHead>
-                                        <TableHead className="text-xs text-right">Current Profit %</TableHead>
-                                        <TableHead className="text-xs">Open Date</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {trades.map((trade) => {
-                                        const isProfit = trade.profitPercentage >= 0;
-                                        return (
-                                            <TableRow key={trade.trade_id}>
-                                                <TableCell className="font-medium text-xs">{trade.trade_id}</TableCell>
-                                                <TableCell className="whitespace-nowrap text-xs">{trade.asset}</TableCell>
-                                                <TableCell className="text-xs">{trade.amount.toFixed(2)}</TableCell>
-                                                <TableCell className="text-xs whitespace-nowrap">
-                                                    {trade.stake_amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ({trade.leverage}x)
-                                                </TableCell>
-                                                <TableCell className="text-xs">{trade.openRate}</TableCell>
-                                                <TableCell className="text-xs">{trade.currentRate}</TableCell>
-                                                <TableCell className={`text-right font-semibold whitespace-nowrap text-xs ${isProfit ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]'}`}>
-                                                    {isProfit ? '▲' : '▼'} {trade.profitPercentage.toFixed(2)}% (${trade.profitAbs?.toFixed(2)})
-                                                </TableCell>
-                                                <TableCell className="whitespace-nowrap text-xs">{formatTradeDate(trade.openDate)}</TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </CardContent>
             </Card>
         );
     }
@@ -369,7 +320,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
   return (
     <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-5">
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
