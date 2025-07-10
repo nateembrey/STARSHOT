@@ -7,6 +7,7 @@ import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Notifications } from '@/components/dashboard/notifications';
+import { Card, CardContent } from '@/components/ui/card';
 
 function usePageVisibility() {
   const [isVisible, setIsVisible] = useState(typeof document === 'undefined' || document.visibilityState === 'visible');
@@ -32,11 +33,13 @@ function usePageVisibility() {
 export default function DashboardPage() {
   const [chatGptData, setChatGptData] = useState<TradingData | null>(null);
   const [geminiData, setGeminiData] = useState<TradingData | null>(null);
+  const [debugData, setDebugData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newTradesCount, setNewTradesCount] = useState(0);
   const lastChatGptTradeCount = useRef<number | null>(null);
   const lastGeminiTradeCount = useRef<number | null>(null);
   const isVisible = usePageVisibility();
+  const [activeTab, setActiveTab] = useState('chatgpt');
 
   const { toast } = useToast();
 
@@ -57,6 +60,18 @@ export default function DashboardPage() {
       return null;
     }
   }, [toast]);
+  
+  const fetchDebugData = useCallback(async (model: 'chatgpt' | 'gemini') => {
+    try {
+        const response = await fetch(`/api/raw-status-debug?model=${model}`);
+        const data = await response.json();
+        setDebugData(data);
+    } catch (err) {
+        console.error("Failed to fetch debug data", err);
+        setDebugData({ error: "Failed to fetch debug data." });
+    }
+  }, []);
+
 
   const fetchAllData = useCallback(async (isInitialFetch = false) => {
      if (isInitialFetch) { 
@@ -95,24 +110,24 @@ export default function DashboardPage() {
   }, [fetchDataForModel]);
 
   useEffect(() => {
-    // Initial fetch to populate the page without waiting for visibility.
     fetchAllData(true);
-  }, [fetchAllData]);
+    fetchDebugData(activeTab as 'chatgpt' | 'gemini');
+  }, [fetchAllData, fetchDebugData, activeTab]);
 
   useEffect(() => {
     if (isVisible) {
-      // Fetch immediately when tab becomes visible if it's not the initial load
       fetchAllData(false);
-
+      fetchDebugData(activeTab as 'chatgpt' | 'gemini');
       const intervalId = setInterval(() => {
         fetchAllData(false);
-      }, 15000); // 15 seconds
+        fetchDebugData(activeTab as 'chatgpt' | 'gemini');
+      }, 15000);
 
       return () => {
         clearInterval(intervalId);
       };
     }
-  }, [isVisible, fetchAllData]);
+  }, [isVisible, fetchAllData, fetchDebugData, activeTab]);
 
 
   const handleClearNotifications = () => {
@@ -121,7 +136,7 @@ export default function DashboardPage() {
 
 
   return (
-    <Tabs defaultValue="chatgpt">
+    <Tabs defaultValue="chatgpt" onValueChange={setActiveTab}>
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
           <div className="flex h-16 items-center px-6 md:px-12">
@@ -155,6 +170,13 @@ export default function DashboardPage() {
           <TabsContent value="gemini" className="space-y-4">
             <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
           </TabsContent>
+          <Card>
+              <CardContent className="p-4">
+                  <pre className="text-xs whitespace-pre-wrap">
+                      {JSON.stringify(debugData, null, 2)}
+                  </pre>
+              </CardContent>
+          </Card>
         </main>
       </div>
     </Tabs>
