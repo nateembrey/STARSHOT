@@ -148,6 +148,20 @@ export function DashboardTab({ modelName }: { modelName: string }) {
       color: 'hsl(var(--chart-2))',
     },
   };
+  
+  const singleModelChartConfig = isGpt ? {
+    performance: {
+      label: "ChatGPT",
+      color: 'hsl(var(--chart-1))',
+    }
+  } : {
+    performance: {
+      label: "Gemini",
+      color: 'hsl(var(--chart-2))',
+    }
+  };
+
+  const singleModelChartData = chartData.map(d => ({ month: d.month, performance: isGpt ? d.gpt : d.gemini }));
 
   return (
     <>
@@ -201,11 +215,40 @@ export function DashboardTab({ modelName }: { modelName: string }) {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>{modelName} Performance</CardTitle>
+          <CardDescription>January - July</CardDescription>
+        </CardHeader>
+        <CardContent className="pl-2">
+          <ChartContainer config={singleModelChartConfig} className="h-[250px] w-full">
+              <LineChart data={singleModelChartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis 
+                      dataKey="month" 
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      />
+                  <YAxis 
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => `$${value / 1000}k`}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line dataKey="performance" type="monotone" stroke={`var(--color-performance)`} strokeWidth={2} dot={false} name={modelName} />
+              </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Performance Overview</CardTitle>
-            <CardDescription>January - July</CardDescription>
+            <CardTitle>Performance Comparison</CardTitle>
+            <CardDescription>ChatGPT vs. Gemini</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ChartContainer config={chartConfig} className="h-[350px] w-full">
