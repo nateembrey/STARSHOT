@@ -36,6 +36,7 @@ import {
   LabelList,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { cn } from '@/lib/utils';
 
 interface Trade {
     asset: string;
@@ -85,22 +86,24 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-8 pt-0">
-                {isLoading ? (
-                    <>
-                        <Skeleton className="h-10 w-3/4" />
-                        {subtext && <Skeleton className="h-4 w-1/2 mt-4" />}
-                    </>
-                ) : hasData ? (
-                    <>
-                        <div className="text-6xl font-bold tracking-tight">{value}</div>
-                        {subtext && <p className="text-xs text-muted-foreground mt-4">{subtext}</p>}
-                    </>
-                ) : (
-                    <>
-                        <div className="text-6xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
-                        {subtext && <p className="text-xs text-muted-foreground/50 mt-4">No data available</p>}
-                    </>
-                )}
+                <div className={cn(!isLoading && 'animate-content-in')}>
+                    {isLoading ? (
+                        <>
+                            <Skeleton className="h-10 w-3/4" />
+                            {subtext && <Skeleton className="h-4 w-1/2 mt-4" />}
+                        </>
+                    ) : hasData ? (
+                        <>
+                            <div className="text-6xl font-bold tracking-tight">{value}</div>
+                            {subtext && <p className="text-xs text-muted-foreground mt-4">{subtext}</p>}
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-6xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
+                            {subtext && <p className="text-xs text-muted-foreground/50 mt-4">No data available</p>}
+                        </>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );
@@ -119,7 +122,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                 <CardTitle className="text-xl">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className={cn('p-8', !isLoading && 'animate-content-in')}>
                 {isLoading ? (
                     <div className="space-y-2 px-2">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -182,7 +185,7 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
                     <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
                 </div>
                 {hasData && (
-                    <div className="text-right">
+                    <div className={cn(!isLoading && 'animate-content-in')}>
                         <p className="text-xs text-muted-foreground">Biggest Trade</p>
                         <p className="font-bold text-lg text-[hsl(var(--chart-2))]">
                             {biggestWin.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -191,7 +194,7 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
                 )}
             </div>
         </CardHeader>
-        <CardContent className="p-2 pt-0">
+        <CardContent className={cn('p-2 pt-0', !isLoading && 'animate-content-in')}>
             {isLoading ? (
                 <Skeleton className="h-[200px] w-full" />
             ) : !hasData || data.length === 0 ? (
@@ -245,7 +248,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 <CardTitle className="text-xl">Cumulative Profit</CardTitle>
                 <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 pt-0">
+            <CardContent className={cn('p-2 pt-0', !isLoading && 'animate-content-in')}>
                 {isLoading ? (
                     <Skeleton className="h-[200px] w-full" />
                 ) : !hasData || data.length === 0 ? (
@@ -325,7 +328,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CardHeader className="p-8">
                 <CardTitle className="text-xl">Open Trades</CardTitle>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className={cn('p-8', !isLoading && 'animate-content-in')}>
               {isLoading ? (
                   <Skeleton className="h-40 w-full" />
               ) : openTradesFromStatus.length > 0 ? (
