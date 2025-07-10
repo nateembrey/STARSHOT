@@ -6,11 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard-tab';
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Notifications } from '@/components/dashboard/notifications';
 
 export default function DashboardPage() {
   const [chatGptData, setChatGptData] = React.useState<TradingData | null>(null);
   const [geminiData, setGeminiData] = React.useState<TradingData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [newTradesCount, setNewTradesCount] = React.useState(0);
+  const lastChatGptTradeCount = React.useRef<number | null>(null);
+  const lastGeminiTradeCount = React.useRef<number | null>(null);
+
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -38,14 +43,37 @@ export default function DashboardPage() {
     
     const fetchAllData = async () => {
        if (!isMounted) return;
-       setIsLoading(true);
+       if (isLoading) { // Only set loading on the very first fetch
+         setIsLoading(true);
+       }
        const [chatgpt, gemini] = await Promise.all([
          fetchDataForModel('chatgpt'),
          fetchDataForModel('gemini'),
        ]);
+       
        if (isMounted) {
          setChatGptData(chatgpt);
          setGeminiData(gemini);
+         
+         let newlyCompleted = 0;
+         if (chatgpt) {
+            if (lastChatGptTradeCount.current !== null && chatgpt.totalTrades > lastChatGptTradeCount.current) {
+                newlyCompleted += (chatgpt.totalTrades - lastChatGptTradeCount.current);
+            }
+            lastChatGptTradeCount.current = chatgpt.totalTrades;
+         }
+
+         if (gemini) {
+             if (lastGeminiTradeCount.current !== null && gemini.totalTrades > lastGeminiTradeCount.current) {
+                newlyCompleted += (gemini.totalTrades - lastGeminiTradeCount.current);
+            }
+            lastGeminiTradeCount.current = gemini.totalTrades;
+         }
+
+         if (newlyCompleted > 0) {
+            setNewTradesCount(prev => prev + newlyCompleted);
+         }
+
          setIsLoading(false);
        }
     }
@@ -57,7 +85,11 @@ export default function DashboardPage() {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [toast]);
+  }, [toast, isLoading]);
+
+  const handleClearNotifications = () => {
+    setNewTradesCount(0);
+  };
 
 
   return (
@@ -79,7 +111,8 @@ export default function DashboardPage() {
                 </TabsTrigger>
               </TabsList>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Notifications count={newTradesCount} onClear={handleClearNotifications} />
               <UserNav />
             </div>
           </div>
