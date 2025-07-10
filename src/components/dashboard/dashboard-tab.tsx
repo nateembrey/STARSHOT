@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, Triangle, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, ArrowUp, ArrowDown } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isValid } from 'date-fns';
@@ -38,7 +38,6 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface Trade {
-    // Shared fields
     asset: string;
     type: 'BUY' | 'SELL';
     status: 'Open' | 'Closed';
@@ -47,12 +46,8 @@ interface Trade {
     openDate: string;
     profitPercentage: number;
     profitAbs: number;
-    
-    // Closed Trade specific
     closeDate: string | null;
     closeRate: number;
-    
-    // Open Trade specific
     trade_id?: number;
     stake_amount?: number;
     leverage?: number;
@@ -116,18 +111,6 @@ const formatTradeDate = (dateString: string) => {
     if (!isValid(date)) return 'N/A';
     return format(date, 'yyyy-MM-dd HH:mm:ss');
 };
-
-const OpenTradesTable = ({ trades, isLoading, hasData }: { trades: Trade[], isLoading: boolean, hasData: boolean }) => {
-    return (
-        <Card>
-            <CardHeader className="p-6">
-                <CardTitle className="text-lg">Open Trades</CardTitle>
-                <CardDescription className="text-xs">Real-time view of all trades currently in progress.</CardDescription>
-            </CardHeader>
-        </Card>
-    )
-}
-
 
 const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
@@ -337,7 +320,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             />
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
-        
+
         <Card>
             <CardHeader>
                 <CardTitle>bumba</CardTitle>
@@ -385,13 +368,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
               )}
             </CardContent>
         </Card>
-
-        <OpenTradesTable
-          trades={data?.openTrades ?? []}
-          isLoading={isLoading}
-          hasData={!!data && data.openTrades.length > 0}
-        />
-
+        
         <ClosedTradesTable 
             title="Recent Closed Trades"
             description="A history of all closed trades."
