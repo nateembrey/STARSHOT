@@ -2,7 +2,6 @@
 
 import {NextResponse} from 'next/server';
 
-// --- API CONFIGURATION ---
 const API_CONFIG = {
   chatgpt: {
     baseUrl: 'http://35.228.171.101:8071/api/v1',
@@ -15,43 +14,34 @@ const API_CONFIG = {
     password: 'ai_trading_agent',
   },
 };
-// --- END CONFIGURATION ---
 
-// Helper function to create Authorization header for Basic Auth
 function getAuthHeader(username: string, password?: string) {
-  if (!password) {
-    return {};
-  }
+  if (!password) return {};
   const credentials = Buffer.from(`${username}:${password}`).toString('base64');
   return { Authorization: `Basic ${credentials}` };
 }
 
-// Helper to make fetch requests
 async function apiFetch(url: string, headers: HeadersInit) {
-  const response = await fetch(url, { headers, cache: 'no-store' });
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-  }
   try {
+    const response = await fetch(url, { headers, cache: 'no-store' });
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
     return response.json();
-  } catch (e) {
-    console.error(`Failed to parse JSON from ${url}`);
-    return {}; // Return empty object if JSON parsing fails
+  } catch (e: any) {
+    console.error(`Failed to fetch or parse JSON from ${url}:`, e.message);
+    return {};
   }
 }
-
 
 export async function GET(request: Request) {
   const {searchParams} = new URL(request.url);
   const model = searchParams.get('model');
 
   if (!model || (model !== 'chatgpt' && model !== 'gemini')) {
-    return NextResponse.json(
-      {error: 'Invalid model specified'},
-      {status: 400}
-    );
+    return NextResponse.json({error: 'Invalid model specified'}, {status: 400});
   }
 
   const config = API_CONFIG[model as 'chatgpt' | 'gemini'];
@@ -59,16 +49,13 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    // Only fetch from /trades endpoint as the single source of truth
-    const tradesData = await apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] }));
-
-    // --- ROBUST DATA TRANSFORMATION ---
+    const tradesData = await apiFetch(`${config.baseUrl}/trades`, headers);
     const allTradesSource = tradesData?.trades ?? [];
 
     const allTrades = allTradesSource.map((trade: any) => ({
       asset: trade.pair || 'N/A',
       type: trade.is_short ? 'SELL' : 'BUY',
-      status: trade.close_date_ts !== null ? 'Closed' : 'Open',
+      status: trade.close_date_ts != null ? 'Closed' : 'Open',
       profitPercentage: (trade.profit_ratio ?? 0) * 100,
       profitAbs: trade.profit_abs ?? 0,
       openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
@@ -77,23 +64,19 @@ export async function GET(request: Request) {
       closeRate: trade.close_rate ?? 0,
       amount: trade.amount ?? 0,
     }));
-
-    // Unerringly filter into open and closed trades
+    
     const openTrades = allTrades.filter((t: any) => t.status === 'Open')
       .sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
 
     const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
       .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
 
-
-    // --- CALCULATE STATS RELIABLY FROM TRADES ---
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
     const losingTrades = totalTrades - winningTrades;
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
     const pnl = closedTrades.reduce((acc: number, trade: any) => acc + (trade.profitAbs ?? 0), 0);
     
-    // Data for charts, derived from the reliable closed trades list
     const tradeHistoryForCharts = closedTrades
         .slice() 
         .reverse()
@@ -110,22 +93,16 @@ export async function GET(request: Request) {
     });
 
     const formattedData = {
-      // Summary Stats (Calculated)
       pnl,
       totalTrades,
       winRate,
       winningTrades,
       losingTrades,
-      
-      // Trade Lists
       openTrades,
       closedTrades,
-
-      // Chart Data
       tradeHistoryForCharts,
       cumulativeProfitHistory,
     };
-    // --- END DATA TRANSFORMATION ---
 
     return NextResponse.json(formattedData);
 

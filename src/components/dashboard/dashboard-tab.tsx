@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -17,12 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-    DollarSign,
-    Activity,
-    TrendingUp,
-    Percent,
-} from 'lucide-react';
+import { TrendingUp, Activity, Percent } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +31,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Rectangle,
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
@@ -72,7 +67,6 @@ interface TradingData {
   cumulativeProfitHistory: ChartData[];
 }
 
-
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
@@ -88,12 +82,12 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-xl font-bold">{value}</div>
+                        <div className="text-2xl font-bold">{value}</div>
                         {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-xl font-bold text-muted-foreground/50">N/A</div>
+                        <div className="text-2xl font-bold text-muted-foreground/50">N/A</div>
                         {subtext && <p className="text-xs text-muted-foreground/50">No data available</p>}
                     </>
                 )}
@@ -125,27 +119,31 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="px-2">Asset</TableHead>
-                                    <TableHead className="px-2">Type</TableHead>
-                                    <TableHead className="px-2">Amount</TableHead>
-                                    <TableHead className="px-2">Open Rate</TableHead>
-                                    <TableHead className="px-2">{isClosedTrades ? "Close Rate" : "Open Date"}</TableHead>
-                                    <TableHead className="px-2 text-right">{isClosedTrades ? "Profit" : "Status"}</TableHead>
+                                    <TableHead>Asset</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Open Rate</TableHead>
+                                    <TableHead>{isClosedTrades ? "Close Rate" : "Open Date"}</TableHead>
+                                    <TableHead className="text-right">{isClosedTrades ? "Profit" : "Status"}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {trades.map((trade, index) => (
                                     <TableRow key={index}>
-                                        <TableCell className="font-medium p-2 whitespace-nowrap">{trade.asset}</TableCell>
-                                        <TableCell className="p-2">
+                                        <TableCell className="font-medium whitespace-nowrap">{trade.asset}</TableCell>
+                                        <TableCell>
                                             <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className={`text-xs ${trade.type === 'BUY' ? 'bg-blue-900/50 text-blue-300' : 'bg-purple-900/50 text-purple-300'}`}>
                                                 {trade.type}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="p-2">{trade.amount.toFixed(4)}</TableCell>
-                                        <TableCell className="p-2">{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                                        <TableCell className="p-2 whitespace-nowrap">{isClosedTrades ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') : (trade.openDate && new Date(trade.openDate).getTime() > 0 ? format(new Date(trade.openDate), 'PPp') : 'N/A')}</TableCell>
-                                        <TableCell className="p-2 text-right font-semibold whitespace-nowrap">
+                                        <TableCell>{trade.amount.toFixed(4)}</TableCell>
+                                        <TableCell>{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                                        <TableCell className="whitespace-nowrap">
+                                          {isClosedTrades 
+                                            ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') 
+                                            : (trade.openDate && new Date(trade.openDate).getTime() > 0 ? format(new Date(trade.openDate), 'PPp') : 'N/A')}
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold whitespace-nowrap">
                                             {isClosedTrades ? (
                                                 <span className={(trade.profitAbs ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
                                                     {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -177,23 +175,15 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
             ) : !hasData || data.length === 0 ? (
                  <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
-                 <ChartContainer config={{
-                    profit: {
-                        label: 'Profit',
-                        color: 'hsl(var(--chart-1))',
-                    },
-                 }} className="h-[250px] w-full">
+                 <ChartContainer config={{ profit: { label: 'Profit' } }} className="h-[250px] w-full">
                     <BarChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                        <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted))' }}
-                            content={<ChartTooltipContent />}
-                        />
+                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <Bar dataKey="profit" radius={4}>
                             {data.map((entry, index) => (
-                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(150, 70%, 45%)' : 'hsl(10, 80%, 55%)'} />
+                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? '#10B981' : '#F97066'} />
                             ))}
                         </Bar>
                     </BarChart>
@@ -215,27 +205,19 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
             ) : !hasData || data.length === 0 ? (
                 <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
-                <ChartContainer config={{
-                    cumulativeProfit: {
-                        label: 'Cumulative Profit',
-                        color: 'hsl(var(--chart-1))',
-                    },
-                }} className="h-[250px] w-full">
+                <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit', color: 'hsl(var(--accent))' } }} className="h-[250px] w-full">
                     <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                        <Tooltip
-                            cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
-                            content={<ChartTooltipContent />}
-                        />
+                        <Tooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                         <defs>
                             <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
                             </linearGradient>
                         </defs>
-                        <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCumulative)" />
+                        <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke="hsl(var(--accent))" fillOpacity={1} fill="url(#colorCumulative)" />
                     </AreaChart>
                 </ChartContainer>
             )}
@@ -249,7 +231,10 @@ export function DashboardTab({ modelName }: { modelName: string }) {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    async function fetchData() {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      if(!isMounted) return;
       setIsLoading(true);
       try {
         const response = await fetch(`/api/trading-data?model=${modelName.toLowerCase()}`);
@@ -258,62 +243,64 @@ export function DashboardTab({ modelName }: { modelName: string }) {
           throw new Error(errorData.error || `Failed to fetch data: ${response.statusText}`);
         }
         const result: TradingData = await response.json();
-        setData(result);
+        if(isMounted) setData(result);
       } catch (err: any) {
         console.error(`Error fetching ${modelName} data:`, err);
-        toast({
-            variant: "destructive",
-            title: `Error fetching ${modelName} data`,
-            description: err.message,
-        });
-        setData(null);
+        if(isMounted) {
+            toast({
+                variant: "destructive",
+                title: `Error fetching ${modelName} data`,
+                description: err.message,
+            });
+            setData(null);
+        }
       } finally {
-        setIsLoading(false);
+        if(isMounted) setIsLoading(false);
       }
-    }
+    };
+    
     fetchData();
+    const intervalId = setInterval(fetchData, 15000); // Poll every 15 seconds
+
+    return () => {
+        isMounted = false;
+        clearInterval(intervalId);
+    };
   }, [modelName, toast]);
 
-  const hasData = !!data;
+  const hasData = !!data && data.totalTrades > 0;
   const pnlValue = data?.pnl ?? 0;
   const pnlColor = pnlValue >= 0 ? 'text-green-400' : 'text-red-400';
 
   return (
-    <div className="space-y-4">
-        {/* Summary Cards */}
+    <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Net profit from all closed trades" />
-            <StatCard isLoading={isLoading} hasData={hasData && (data?.totalTrades ?? 0) > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total number of completed trades" />
-            <StatCard isLoading={isLoading} hasData={hasData && (data?.totalTrades ?? 0) > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext={`${data?.winningTrades ?? 0} Wins / ${data?.losingTrades ?? 0} Losses`} />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total number of completed trades" />
+            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext={`${data?.winningTrades ?? 0} Wins / ${data?.losingTrades ?? 0} Losses`} />
         </div>
         
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ProfitLossChart data={data?.tradeHistoryForCharts ?? []} isLoading={isLoading} hasData={hasData && (data?.tradeHistoryForCharts?.length ?? 0) > 0} />
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={hasData && (data?.cumulativeProfitHistory?.length ?? 0) > 0} />
         </div>
 
-        {/* Open and Closed Trades Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-6">
              <TradesTable 
                 title="Open Trades"
                 description="Trades that are currently active."
                 trades={data?.openTrades ?? []}
                 isLoading={isLoading}
-                hasData={hasData}
+                hasData={!!data}
             />
             <TradesTable 
                 title="Recent Closed Trades"
                 description="A history of all closed trades."
-                trades={(data?.closedTrades ?? [])}
+                trades={(data?.closedTrades ?? []).slice(0, 20)}
                 isLoading={isLoading}
                 hasData={hasData}
             />
         </div>
-
     </div>
   );
 }
-
-
-    
