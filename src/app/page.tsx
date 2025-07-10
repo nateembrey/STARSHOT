@@ -7,7 +7,7 @@ export default function DashboardPage() {
     <Tabs defaultValue="chatgpt">
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-          <div className="flex h-14 items-center px-4">
+          <div className="flex h-14 items-center px-4 md:px-8">
             <h1 className="text-2xl font-bold tracking-tight text-white">STARSHOT</h1>
             <div className="flex-1 flex justify-center">
               <TabsList className="grid w-full grid-cols-2 sm:max-w-[240px] rounded-full">
@@ -24,7 +24,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </header>
-        <main className="flex-1 space-y-4 p-4 pt-6">
+        <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
            <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tight">Bot Performance Comparison</h2>
               <p className="text-muted-foreground">

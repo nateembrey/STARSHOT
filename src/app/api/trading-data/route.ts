@@ -1,4 +1,3 @@
-
 'use server';
 
 import {NextResponse} from 'next/server';
@@ -60,26 +59,16 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    const [statusData, tradesData] = await Promise.all([
-        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({ bots: { status: [{}] } })),
-        apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] })),
-    ]);
-    
-    // --- START DEBUG LOGGING ---
-    console.log(`--- RAW DATA FOR ${model.toUpperCase()} ---`);
-    console.log("Raw /status response:", JSON.stringify(statusData, null, 2));
-    console.log("Raw /trades response:", JSON.stringify(tradesData, null, 2));
-    console.log(`-------------------------------------`);
-    // --- END DEBUG LOGGING ---
-
+    // Only fetch from /trades endpoint
+    const tradesData = await apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] }));
 
     // --- DATA TRANSFORMATION (ROBUST) ---
     const allTrades = (tradesData?.trades ?? []).map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
-        status: trade.is_open ? 'Open' : 'Closed',
+        status: trade.close_date_ts ? 'Closed' : 'Open',
         profitPercentage: !trade.is_open ? (trade.profit_ratio ?? 0) * 100 : null,
-        profitAbs: !trade.is_open ? trade.profit_abs ?? 0 : null,
+        profitAbs: trade.close_date_ts ? trade.profit_abs ?? 0 : null,
         openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : '',
         closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
         openRate: trade.open_rate ?? 0,
@@ -106,7 +95,7 @@ export async function GET(request: Request) {
         .reverse()
         .map((trade: any, index: number) => ({
             name: `Trade ${index + 1}`,
-            date: new Date(trade.closeDate).toLocaleDateString(),
+            date: trade.closeDate ? new Date(trade.closeDate).toLocaleDateString() : '',
             profit: trade.profitAbs,
         }));
     
