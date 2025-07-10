@@ -369,7 +369,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
   return (
     <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
@@ -387,22 +387,20 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-             <TradesTable 
-                title="Open Trades"
-                description="Trades that are currently active."
-                trades={data?.openTrades ?? []}
-                isLoading={isLoading}
-                hasData={!!data && data.openTrades.length > 0}
-            />
-            <TradesTable 
-                title="Recent Closed Trades"
-                description="A history of all closed trades."
-                trades={(data?.closedTrades ?? []).slice(0, 20)}
-                isLoading={isLoading}
-                hasData={!!data && data.closedTrades.length > 0}
-            />
-        </div>
+        <TradesTable 
+            title="Open Trades"
+            description="Trades that are currently active."
+            trades={data?.openTrades ?? []}
+            isLoading={isLoading}
+            hasData={!!data && data.openTrades.length > 0}
+        />
+        <TradesTable 
+            title="Recent Closed Trades"
+            description="A history of all closed trades."
+            trades={(data?.closedTrades ?? []).slice(0, 20)}
+            isLoading={isLoading}
+            hasData={!!data && data.closedTrades.length > 0}
+        />
     </div>
   );
 }
