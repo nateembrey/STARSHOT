@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import {
@@ -40,7 +41,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
 
 interface Trade {
     asset: string;
@@ -182,18 +183,19 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                  <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
                 <div className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer config={{
+                        profit: {
+                            label: "Profit",
+                            color: "hsl(var(--primary))",
+                        },
+                    }}>
                         <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                            <Tooltip
+                            <ChartTooltip
                                 cursor={{ fill: 'hsl(var(--muted))' }}
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    borderColor: 'hsl(var(--border))',
-                                    borderRadius: 'var(--radius)',
-                                }}
+                                content={<ChartTooltipContent />}
                             />
                             <Bar dataKey="profit" name="Profit">
                                 {data.map((entry, index) => (
@@ -201,7 +203,7 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                                 ))}
                             </Bar>
                         </BarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </div>
             )}
         </CardContent>
@@ -221,18 +223,19 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
                 <div className="h-[250px]">
-                   <ResponsiveContainer width="100%" height="100%">
+                   <ChartContainer config={{
+                        cumulativeProfit: {
+                            label: "Cumulative Profit",
+                            color: "hsl(var(--primary))",
+                        },
+                   }}>
                         <AreaChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                            <Tooltip
+                            <ChartTooltip
                                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    borderColor: 'hsl(var(--border))',
-                                    borderRadius: 'var(--radius)',
-                                }}
+                                content={<ChartTooltipContent />}
                             />
                             <defs>
                                 <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
@@ -242,7 +245,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             </defs>
                             <Area type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCumulative)" />
                         </AreaChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </div>
             )}
         </CardContent>
