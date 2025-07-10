@@ -59,12 +59,14 @@ export async function GET(request: Request) {
     ]);
     
     // --- DATA TRANSFORMATION ---
-    const latestStats = statsData.stats_for_period.slice(-1)[0] || {};
+    const latestStats = statsData.stats_for_period?.slice(-1)[0] || {};
     const totalProfit = statsData.profit_total_coin || 0;
     const totalBalance = (statsData.starting_balance + totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    const winRate = latestStats.winning_trades > 0 
-      ? `${((latestStats.winning_trades / latestStats.total_trades) * 100).toFixed(1)}%`
+    const totalTrades = latestStats.total_trades || 0;
+    const winningTrades = latestStats.winning_trades || 0;
+    const winRate = totalTrades > 0
+      ? `${((winningTrades / totalTrades) * 100).toFixed(1)}%`
       : '0%';
 
     const pnl = `+${(latestStats.profit_total_coin || 0).toFixed(3)}`;
@@ -73,18 +75,18 @@ export async function GET(request: Request) {
       .sort((a: any, b: any) => new Date(b.close_date).getTime() - new Date(a.close_date).getTime())
       .slice(0, 5)
       .map((trade: any) => ({
-        asset: trade.pair,
+        asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
         status: trade.is_open ? 'Open' : 'Closed',
-        profit: `${(trade.profit_ratio * 100).toFixed(2)}%`,
+        profit: `${((trade.profit_ratio || 0) * 100).toFixed(2)}%`,
       }));
 
     const formattedData = {
       totalRevenue: `$${totalBalance}`,
       pnl: pnl,
-      trades: `${latestStats.total_trades || 0}`,
+      trades: `${totalTrades}`,
       winRate: winRate,
-      pnlPercentage: `${(latestStats.profit_total_ratio * 100).toFixed(2)}%`,
+      pnlPercentage: `${((latestStats.profit_total_ratio || 0) * 100).toFixed(2)}%`,
       recentTrades,
     };
     // --- END DATA TRANSFORMATION ---
