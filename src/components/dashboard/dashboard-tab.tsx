@@ -81,7 +81,7 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-8">
-                <CardTitle className="text-lg">{title}</CardTitle>
+                <CardTitle className="text-xl">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-8 pt-0">
@@ -116,7 +116,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
     return (
         <Card>
             <CardHeader className="p-8">
-                <CardTitle className="text-lg">{title}</CardTitle>
+                <CardTitle className="text-xl">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
@@ -178,7 +178,7 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
         <CardHeader className="p-8">
             <div className="flex justify-between items-start">
                 <div>
-                    <CardTitle className="text-lg">Profit/Loss per Trade</CardTitle>
+                    <CardTitle className="text-xl">Profit/Loss per Trade</CardTitle>
                     <CardDescription className="text-xs">Outcome of each closed trade.</CardDescription>
                 </div>
                 {hasData && (
@@ -242,7 +242,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     return (
         <Card>
             <CardHeader className="p-8">
-                <CardTitle className="text-lg">Cumulative Profit</CardTitle>
+                <CardTitle className="text-xl">Cumulative Profit</CardTitle>
                 <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0">
@@ -323,7 +323,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
         <Card>
             <CardHeader className="p-8">
-                <CardTitle className="text-lg">Open Trades</CardTitle>
+                <CardTitle className="text-xl">Open Trades</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               {isLoading ? (
