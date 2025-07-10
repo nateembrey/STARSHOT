@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -32,14 +33,12 @@ import {
   BarChart,
   AreaChart,
   CartesianGrid,
-  Legend,
-  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 interface Trade {
     asset: string;
@@ -145,7 +144,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                         </TableCell>
                                         <TableCell className="p-2">{trade.amount.toFixed(4)}</TableCell>
                                         <TableCell className="p-2">{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                                        <TableCell className="p-2 whitespace-nowrap">{isClosedTrades ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') : (trade.openDate ? format(new Date(trade.openDate), 'PPp') : 'N/A')}</TableCell>
+                                        <TableCell className="p-2 whitespace-nowrap">{isClosedTrades ? (trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A') : (trade.openDate && new Date(trade.openDate).getTime() > 0 ? format(new Date(trade.openDate), 'PPp') : 'N/A')}</TableCell>
                                         <TableCell className="p-2 text-right font-semibold whitespace-nowrap">
                                             {isClosedTrades ? (
                                                 <span className={(trade.profitAbs ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
@@ -178,24 +177,27 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
             ) : !hasData || data.length === 0 ? (
                  <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
-                <div className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                            <Tooltip
-                                cursor={{ fill: 'hsl(var(--muted))' }}
-                                content={<ChartTooltipContent />}
-                            />
-                            <Bar dataKey="profit" name="Profit">
-                                {data.map((entry, index) => (
-                                    <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#f43f5e'} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                 <ChartContainer config={{
+                    profit: {
+                        label: 'Profit',
+                        color: 'hsl(var(--chart-1))',
+                    },
+                 }} className="h-[250px] w-full">
+                    <BarChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                        <Tooltip
+                            cursor={{ fill: 'hsl(var(--muted))' }}
+                            content={<ChartTooltipContent />}
+                        />
+                        <Bar dataKey="profit" radius={4}>
+                            {data.map((entry, index) => (
+                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(150, 70%, 45%)' : 'hsl(10, 80%, 55%)'} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ChartContainer>
             )}
         </CardContent>
     </Card>
@@ -213,26 +215,29 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
             ) : !hasData || data.length === 0 ? (
                 <div className="flex items-center justify-center h-[250px] text-muted-foreground">No chart data available.</div>
             ) : (
-                <div className="h-[250px] w-full">
-                   <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                            <Tooltip
-                                cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
-                                content={<ChartTooltipContent />}
-                            />
-                            <defs>
-                                <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCumulative)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
+                <ChartContainer config={{
+                    cumulativeProfit: {
+                        label: 'Cumulative Profit',
+                        color: 'hsl(var(--chart-1))',
+                    },
+                }} className="h-[250px] w-full">
+                    <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                        <Tooltip
+                            cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
+                            content={<ChartTooltipContent />}
+                        />
+                        <defs>
+                            <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCumulative)" />
+                    </AreaChart>
+                </ChartContainer>
             )}
         </CardContent>
     </Card>
@@ -309,3 +314,6 @@ export function DashboardTab({ modelName }: { modelName: string }) {
     </div>
   );
 }
+
+
+    
