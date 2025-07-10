@@ -31,9 +31,16 @@ function getAuthHeader(username: string, password?: string) {
 async function apiFetch(url: string, headers: HeadersInit) {
   const response = await fetch(url, { headers, cache: 'no-store' });
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+  try {
+    return response.json();
+  } catch (e) {
+    console.error(`Failed to parse JSON from ${url}`);
+    return {}; // Return empty object if JSON parsing fails
+  }
 }
 
 
@@ -54,7 +61,7 @@ export async function GET(request: Request) {
 
   try {
     const [statusData, tradesData] = await Promise.all([
-        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({})),
+        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({ bots: { status: [{}] } })),
         apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] })),
     ]);
     
@@ -66,31 +73,31 @@ export async function GET(request: Request) {
     // --- END DEBUG LOGGING ---
 
 
-    // --- DATA TRANSFORMATION ---
+    // --- DATA TRANSFORMATION (ROBUST) ---
     const botStatus = (Array.isArray(statusData?.bots?.status) && statusData.bots.status[0]) || {};
     
-    const totalProfit = botStatus.total_profit || 0;
-    const startingBalance = botStatus.starting_balance || 0;
+    const totalProfit = botStatus?.total_profit ?? 0;
+    const startingBalance = botStatus?.starting_balance ?? 0;
     const totalBalance = (startingBalance + totalProfit);
     
-    const totalTrades = botStatus.trade_count || 0;
-    const winningTrades = botStatus.wins || 0;
+    const totalTrades = botStatus?.trade_count ?? 0;
+    const winningTrades = botStatus?.wins ?? 0;
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
     
     const pnl = totalProfit;
-    const profitRatio = botStatus.profit_ratio || 0;
+    const profitRatio = botStatus?.profit_ratio ?? 0;
 
-    const allTrades = (tradesData.trades || []).map((trade: any) => ({
+    const allTrades = (tradesData?.trades ?? []).map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
         status: trade.is_open ? 'Open' : 'Closed',
-        profitPercentage: trade.is_open ? null : (trade.profit_ratio || 0) * 100,
-        profitAbs: trade.is_open ? null : trade.profit_abs || 0,
-        openDate: trade.open_date_ts || '',
-        closeDate: trade.close_date_ts || null,
-        openRate: trade.open_rate || 0,
-        closeRate: trade.close_rate || 0,
-        amount: trade.amount || 0,
+        profitPercentage: !trade.is_open ? (trade.profit_ratio ?? 0) * 100 : null,
+        profitAbs: !trade.is_open ? trade.profit_abs ?? 0 : null,
+        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : '',
+        closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
+        openRate: trade.open_rate ?? 0,
+        closeRate: trade.close_rate ?? 0,
+        amount: trade.amount ?? 0,
       }));
 
     const openTrades = allTrades.filter((t: any) => t.status === 'Open')
