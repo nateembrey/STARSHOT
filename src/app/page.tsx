@@ -9,7 +9,7 @@ export default function DashboardPage() {
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
           <div className="flex h-14 items-center px-4">
-            <h1 className="text-2xl font-bold tracking-tight text-accent">STARSHOT</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">STARSHOT</h1>
             <div className="flex-1 flex justify-center">
               <TabsList className="grid w-full grid-cols-2 sm:max-w-[360px]">
                 <TabsTrigger value="chatgpt">
