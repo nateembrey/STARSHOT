@@ -342,7 +342,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             <CardTitle className="text-lg md:text-xl">Cumulative Profit</CardTitle>
                             <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
                         </div>
-                        <Button variant="outline" size="sm" onClick={handleFlip} disabled={isLoading || !hasData}>
+                        <Button variant="outline" size="sm" onClick={handleFlip} disabled={isLoading || !canPredict}>
                             <History className="mr-2 h-4 w-4" />
                             PREDICT
                         </Button>
