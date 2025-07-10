@@ -248,14 +248,21 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         
         try {
             const historyForPrediction = data
-                .filter(d => d.date) // Ensure there's a date
+                .filter(d => d.date) // This is the fix: ensure we only use points with a valid date.
                 .map(d => ({
                     date: new Date(d.date).toISOString().split('T')[0], // format as yyyy-MM-dd
                     cumulativeProfit: d.cumulativeProfit || 0,
                 }));
 
+            if (historyForPrediction.length < 2) {
+                console.error("Not enough valid historical data to make a prediction.");
+                setIsPredicting(false);
+                return;
+            }
+
             const result = await predictProfit({ history: historyForPrediction, duration });
             const lastHistoricalPoint = data[data.length - 1];
+
             if (lastHistoricalPoint) {
                 const bridgePoint = {
                     name: lastHistoricalPoint.name,
