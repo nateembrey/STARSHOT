@@ -41,9 +41,9 @@ export default function DashboardPage() {
       }
     };
     
-    const fetchAllData = async () => {
+    const fetchAllData = async (isInitialFetch = false) => {
        if (!isMounted) return;
-       if (isLoading) { // Only set loading on the very first fetch
+       if (isInitialFetch) { 
          setIsLoading(true);
        }
        const [chatgpt, gemini] = await Promise.all([
@@ -74,18 +74,20 @@ export default function DashboardPage() {
             setNewTradesCount(prev => prev + newlyCompleted);
          }
 
-         setIsLoading(false);
+         if (isInitialFetch) {
+            setIsLoading(false);
+         }
        }
     }
 
-    fetchAllData();
-    const intervalId = setInterval(fetchAllData, 15000);
+    fetchAllData(true); // Initial fetch
+    const intervalId = setInterval(() => fetchAllData(false), 15000); // Subsequent fetches
 
     return () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [toast, isLoading]);
+  }, [toast]);
 
   const handleClearNotifications = () => {
     setNewTradesCount(0);
