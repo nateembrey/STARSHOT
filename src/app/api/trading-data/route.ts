@@ -109,7 +109,7 @@ export async function GET(request: Request) {
         .reverse()
         .map((trade: any, index: number) => ({
             name: `Trade ${index + 1}`,
-            date: trade.closeDate ? new Date(trade.closeDate).toLocaleDateString() : '',
+            date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
             profit: trade.profitAbs ?? 0,
         }));
     
