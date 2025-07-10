@@ -1,8 +1,65 @@
+
+'use client';
+
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardTab } from '@/components/dashboard/dashboard-tab';
+import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard-tab';
+import React from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
+  const [chatGptData, setChatGptData] = React.useState<TradingData | null>(null);
+  const [geminiData, setGeminiData] = React.useState<TradingData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const fetchDataForModel = async (model: 'chatgpt' | 'gemini'): Promise<TradingData | null> => {
+      try {
+        const response = await fetch(`/api/trading-data?model=${model}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to fetch data for ${model}`);
+        }
+        return await response.json();
+      } catch (err: any) {
+        if (isMounted) {
+          toast({
+            variant: "destructive",
+            title: `Error fetching ${model} data`,
+            description: err.message,
+          });
+        }
+        return null;
+      }
+    };
+    
+    const fetchAllData = async () => {
+       if (!isMounted) return;
+       setIsLoading(true);
+       const [chatgpt, gemini] = await Promise.all([
+         fetchDataForModel('chatgpt'),
+         fetchDataForModel('gemini'),
+       ]);
+       if (isMounted) {
+         setChatGptData(chatgpt);
+         setGeminiData(gemini);
+         setIsLoading(false);
+       }
+    }
+
+    fetchAllData();
+    const intervalId = setInterval(fetchAllData, 15000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [toast]);
+
+
   return (
     <Tabs defaultValue="chatgpt">
       <div className="flex-col md:flex bg-background min-h-screen">
@@ -35,10 +92,10 @@ export default function DashboardPage() {
               </p>
             </div>
           <TabsContent value="chatgpt" className="space-y-4">
-            <DashboardTab modelName="ChatGPT" />
+            <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
           </TabsContent>
           <TabsContent value="gemini" className="space-y-4">
-            <DashboardTab modelName="Gemini" />
+            <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
           </TabsContent>
         </main>
       </div>

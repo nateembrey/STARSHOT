@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import {
@@ -20,7 +21,6 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Activity, Percent } from 'lucide-react';
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
   Area,
@@ -40,8 +40,8 @@ interface Trade {
     asset: string;
     type: 'BUY' | 'SELL';
     status: 'Open' | 'Closed';
-    profitPercentage: number | null;
-    profitAbs: number | null;
+    profitPercentage: number;
+    profitAbs: number;
     openDate: string;
     closeDate: string | null;
     openRate: number;
@@ -56,7 +56,7 @@ interface ChartData {
     cumulativeProfit?: number;
 }
 
-interface TradingData {
+export interface TradingData {
   pnl: number;
   totalTrades: number;
   winRate: number;
@@ -78,17 +78,17 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
             <CardContent className="p-4 pt-0">
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-7 w-3/4" />
+                        <Skeleton className="h-12 w-3/4" />
                         {subtext && <Skeleton className="h-4 w-1/2 mt-1" />}
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-2xl font-bold">{value}</div>
+                        <div className="text-6xl font-bold">{value}</div>
                         {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-2xl font-bold text-muted-foreground/50">N/A</div>
+                        <div className="text-6xl font-bold text-muted-foreground/50">N/A</div>
                         {subtext && <p className="text-xs text-muted-foreground/50">No data available</p>}
                     </>
                 )}
@@ -146,7 +146,7 @@ const TradesTable = ({ trades, title, description, isLoading, hasData }: { trade
                                         </TableCell>
                                         <TableCell className="text-right font-semibold whitespace-nowrap">
                                             {isClosedTrades ? (
-                                                <span className={(trade.profitAbs ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                                <span className={trade.profitAbs >= 0 ? 'text-green-400' : 'text-red-400'}>
                                                     {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                                                 </span>
                                             ) : (
@@ -184,7 +184,7 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <Bar dataKey="profit" radius={4}>
                             {data.map((entry, index) => (
-                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? '#10B981' : '#F97066'} />
+                                <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
                             ))}
                         </Bar>
                     </BarChart>
@@ -226,49 +226,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     </Card>
 );
 
-export function DashboardTab({ modelName }: { modelName: string }) {
-  const [data, setData] = React.useState<TradingData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const { toast } = useToast();
-
-  React.useEffect(() => {
-    let isMounted = true;
-    
-    const fetchData = async () => {
-      if(!isMounted) return;
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/trading-data?model=${modelName.toLowerCase()}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `Failed to fetch data: ${response.statusText}`);
-        }
-        const result: TradingData = await response.json();
-        if(isMounted) setData(result);
-      } catch (err: any) {
-        console.error(`Error fetching ${modelName} data:`, err);
-        if(isMounted) {
-            toast({
-                variant: "destructive",
-                title: `Error fetching ${modelName} data`,
-                description: err.message,
-            });
-            setData(null);
-        }
-      } finally {
-        if(isMounted) setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-    const intervalId = setInterval(fetchData, 15000); // Poll every 15 seconds
-
-    return () => {
-        isMounted = false;
-        clearInterval(intervalId);
-    };
-  }, [modelName, toast]);
-
+export function DashboardTab({ modelName, data, isLoading }: { modelName: string, data: TradingData | null, isLoading: boolean }) {
   const hasData = !!data && data.totalTrades > 0;
   const pnlValue = data?.pnl ?? 0;
   const pnlColor = pnlValue >= 0 ? 'text-green-400' : 'text-red-400';
@@ -286,7 +244,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={hasData && (data?.cumulativeProfitHistory?.length ?? 0) > 0} />
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
              <TradesTable 
                 title="Open Trades"
                 description="Trades that are currently active."
