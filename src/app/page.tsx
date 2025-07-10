@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const lastGeminiTradeCount = useRef<number | null>(null);
   const isVisible = usePageVisibility();
   const [activeTab, setActiveTab] = useState('chatgpt');
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
 
   const { toast } = useToast();
 
@@ -117,9 +120,35 @@ export default function DashboardPage() {
   const handleClearNotifications = () => {
     setNewTradesCount(0);
   };
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0].clientX; 
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const swipeThreshold = 50; 
+    const swipeDistance = touchStartX.current - touchEndX.current;
+
+    if (swipeDistance > swipeThreshold) {
+      // Swiped left
+      if (activeTab === 'chatgpt') {
+        setActiveTab('gemini');
+      }
+    } else if (swipeDistance < -swipeThreshold) {
+      // Swiped right
+      if (activeTab === 'gemini') {
+        setActiveTab('chatgpt');
+      }
+    }
+  };
 
   return (
-    <Tabs defaultValue="chatgpt" onValueChange={setActiveTab}>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-xl">
           <div className="flex h-20 items-center px-4 md:px-16">
@@ -148,14 +177,16 @@ export default function DashboardPage() {
             </div>
           </div>
         </header>
-        <main className="flex-1 space-y-4 p-8 pt-6 md:p-16">
-          <TabsContent value="chatgpt" className="space-y-4">
-            <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
-          </TabsContent>
-          <TabsContent value="gemini" className="space-y-4">
-            <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
-          </TabsContent>
-        </main>
+        <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+            <main className="flex-1 space-y-4 p-8 pt-6 md:p-16">
+            <TabsContent value="chatgpt" className="space-y-4">
+                <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
+            </TabsContent>
+            <TabsContent value="gemini" className="space-y-4">
+                <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
+            </TabsContent>
+            </main>
+        </div>
       </div>
     </Tabs>
   );
