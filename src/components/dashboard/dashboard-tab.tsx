@@ -239,32 +239,33 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const [isPredicting, setIsPredicting] = useState(false);
     const [prediction, setPrediction] = useState<PredictProfitOutput['prediction'] | null>(null);
     const [predictionDuration, setPredictionDuration] = useState<PredictionDuration>('1M');
+    const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
     
     const handlePredict = async (duration: PredictionDuration) => {
         if (!data || data.length < 2) return;
         setIsPredicting(true);
         setPredictionDuration(duration);
-        setPrediction(null); // Clear previous prediction
+        setPrediction(null);
+        setConfidenceScore(null);
         
         try {
-            // Filter out the "Start" point and any other points without a valid date.
             const historyForPrediction = data
-                .filter(d => d.name !== 'Start' && d.date)
+                .filter(d => d.name !== 'Start')
                 .map(d => ({
-                    // The date is already locale string, so we create a Date object to format it to yyyy-MM-dd
                     date: new Date(d.date).toISOString().split('T')[0],
                     cumulativeProfit: d.cumulativeProfit || 0,
                 }));
 
-            if (historyForPrediction.length < 2) {
+            if (historyForPrediction.length === 0) {
                 console.error("Not enough valid historical data to make a prediction.");
                 setIsPredicting(false);
                 return;
             }
 
             const result = await predictProfit({ history: historyForPrediction, duration });
+            setConfidenceScore(result.confidenceScore);
             const lastHistoricalPoint = data[data.length - 1];
-
+            
             if (lastHistoricalPoint) {
                 const bridgePoint = {
                     name: lastHistoricalPoint.name,
@@ -278,7 +279,6 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
 
         } catch (error) {
             console.error("Prediction failed:", error);
-            // Optionally, show a toast notification here
         } finally {
             setIsPredicting(false);
         }
@@ -292,14 +292,14 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     };
 
     const combinedChartData = isFlipped && prediction ? [
-        ...data.map(d => ({ ...d, predictedProfit: null })),
+        ...data.map(d => ({ ...d, predictedProfit: null, date: new Date(d.date).toISOString().split('T')[0] })),
         ...prediction.map(p => ({
             name: p.name,
             date: p.date,
             cumulativeProfit: null, 
             predictedProfit: p.predictedProfit,
         }))
-    ] : data.map(d => ({ ...d, predictedProfit: null }));
+    ] : data.map(d => ({ ...d, predictedProfit: null, date: d.date ? new Date(d.date).toISOString().split('T')[0] : "" }));
 
 
     const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
@@ -353,7 +353,11 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                      <CardHeader className="p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-xl">Profit Forecast</CardTitle>
-                            <CardDescription className="text-xs">AI-powered prediction based on historical data.</CardDescription>
+                            {confidenceScore !== null && (
+                                <CardDescription className="text-xs">
+                                    Forecast Confidence: <span className="font-bold">{confidenceScore.toFixed(0)}%</span>
+                                </CardDescription>
+                            )}
                         </div>
                         <Button variant="outline" size="sm" onClick={handleFlip}>
                            <History className="mr-2 h-4 w-4" />

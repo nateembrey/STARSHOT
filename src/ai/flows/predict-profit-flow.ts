@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { addDays, addMonths, addYears, format } from 'date-fns';
 
 const TradeDataPointSchema = z.object({
-    date: z.string().describe('The closing date of the trade.'),
+    date: z.string().describe('The closing date of the trade in yyyy-MM-dd format.'),
     cumulativeProfit: z.number().describe('The cumulative profit at that point in time.'),
 });
 
@@ -31,6 +31,7 @@ const PredictionPointSchema = z.object({
 
 const PredictProfitOutputSchema = z.object({
   prediction: z.array(PredictionPointSchema).describe('An array of predicted future profit points.'),
+  confidenceScore: z.number().describe('A percentage confidence score (0-100) of the prediction accuracy, based on the volume and quality of historical data.'),
 });
 export type PredictProfitOutput = z.infer<typeof PredictProfitOutputSchema>;
 
@@ -55,17 +56,20 @@ const prompt = ai.definePrompt({
       startDate: z.string(),
       endDate: z.string(),
       lastProfit: z.number(),
+      dataPointCount: z.number(),
     }) 
   },
   output: { schema: PredictProfitOutputSchema },
   prompt: `You are a financial analyst specializing in time-series forecasting.
-Your task is to predict the cumulative profit trajectory based on the provided historical data.
+Your task is to predict the cumulative profit trajectory based on the provided historical data, even if the data is sparse.
+
+You must also provide a confidence score (0-100) based on the amount and volatility of the data. If there are fewer than 10 data points ({{dataPointCount}}), the confidence should be low. If the data is highly volatile, the confidence should also be lower.
 
 Analyze the trends, volatility, and patterns in the historical data to make a realistic projection. The prediction should consist of 10-15 data points.
 
 The last known cumulative profit is {{lastProfit}}. Your prediction should start from there.
 
-Historical Data:
+Historical Data ({{dataPointCount}} points):
 {{formattedHistory}}
 
 Predict the cumulative profit from {{startDate}} to {{endDate}}.
@@ -81,16 +85,15 @@ const predictProfitFlow = ai.defineFlow(
     outputSchema: PredictProfitOutputSchema,
   },
   async ({ history, duration }) => {
-    if (history.length < 2) {
-      // Not enough data to make a prediction
-      return { prediction: [] };
+    // We let the AI handle sparse data, but if there's no history, we can't proceed.
+    if (history.length === 0) {
+      return { prediction: [], confidenceScore: 0 };
     }
 
     const lastDataPoint = history[history.length - 1];
     const startDate = new Date(lastDataPoint.date);
     const endDate = getFutureDate(startDate, duration);
     
-    // Format history for the prompt
     const formattedHistory = history.map(p => `${p.date}: $${p.cumulativeProfit.toFixed(2)}`).join('\n');
 
     const { output } = await prompt({
@@ -98,6 +101,7 @@ const predictProfitFlow = ai.defineFlow(
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         lastProfit: lastDataPoint.cumulativeProfit,
+        dataPointCount: history.length,
     });
     
     return output!;
