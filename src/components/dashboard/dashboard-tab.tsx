@@ -309,7 +309,9 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                       </Badge>
                     </TableCell>
                     <TableCell className="p-2">
-                        <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}>
+                        <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}
+                           className={trade.status === 'Open' ? 'border-accent text-accent' : ''}
+                        >
                             {trade.status}
                         </Badge>
                     </TableCell>
