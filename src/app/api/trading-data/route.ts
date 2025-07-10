@@ -16,13 +16,13 @@ export async function GET(request: Request) {
   const model = searchParams.get('model'); // 'chatgpt' or 'gemini'
 
   // --- CONFIGURATION: You need to update these values ---
-  const loginUrl = 'https://your-website.com/login'; // TODO: Replace with the actual login URL
-  const dataUrl = 'https://your-website.com/dashboard'; // TODO: Replace with the URL of the page containing the data after login
+  const loginUrl = 'http://35.228.171.101:8071/'; // Login page
+  const dataUrl = 'http://35.228.171.101:8071/dashboard'; // Page with data after login
 
   // --- SELECTORS: You need to update these with the actual selectors from the website's HTML ---
-  const usernameSelector = '#username'; // TODO: Replace with the selector for the username input
-  const passwordSelector = '#password'; // TODO: Replace with the selector for the password input
-  const loginButtonSelector = '#login-button'; // TODO: Replace with the selector for the login button
+  const usernameSelector = '#username-input'; 
+  const passwordSelector = '#password-input'; 
+  const loginButtonSelector = 'button[type="submit"]'; // This is a common selector for login buttons.
 
   // This is a placeholder for where you would define selectors to find your data.
   // You will need to inspect the target website's HTML to find the correct selectors.
