@@ -191,9 +191,9 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                           <LabelList
                             dataKey="profit"
                             position="insideTop"
-                            offset={5}
+                            offset={12}
                             fontSize={9}
-                            fill="hsl(var(--primary-foreground))"
+                            fill="hsl(var(--primary))"
                             formatter={(value: number) =>
                               value.toLocaleString('en-US', {
                                 style: 'currency',
@@ -272,7 +272,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProfitLossChart data={data?.tradeHistoryForCharts ?? []} isLoading={isLoading} hasData={!!data && (data?.tradeHistoryForCharts?.length ?? 0) > 0} />
-            <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 0} />
+            <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 1} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
