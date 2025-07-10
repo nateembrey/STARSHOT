@@ -33,7 +33,7 @@ async function apiFetch(url: string, headers: HeadersInit) {
     return response.json();
   } catch (e: any) {
     console.error(`Failed to fetch or parse JSON from ${url}:`, e.message);
-    return null; // Return null on fetch/parse failure
+    return null; 
   }
 }
 
