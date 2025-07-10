@@ -82,17 +82,17 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                 {isLoading ? (
                     <>
                         <Skeleton className="h-10 w-3/4" />
-                        {subtext && <Skeleton className="h-4 w-1/2 mt-1" />}
+                        {subtext && <Skeleton className="h-4 w-1/2 mt-2" />}
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-5xl font-bold">{value}</div>
-                        {subtext && <p className="text-xs text-muted-foreground mt-1">{subtext}</p>}
+                        <div className="text-4xl font-bold tracking-tight">{value}</div>
+                        {subtext && <p className="text-xs text-muted-foreground mt-2">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-5xl font-bold text-muted-foreground/50">N/A</div>
-                        {subtext && <p className="text-xs text-muted-foreground/50 mt-1">No data available</p>}
+                        <div className="text-4xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
+                        {subtext && <p className="text-xs text-muted-foreground/50 mt-2">No data available</p>}
                     </>
                 )}
             </CardContent>
@@ -302,7 +302,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins / Losses" value={`${data?.winningTrades ?? 0}/${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
