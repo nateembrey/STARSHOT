@@ -122,14 +122,16 @@ export default function DashboardPage() {
     <Tabs defaultValue="chatgpt" onValueChange={setActiveTab}>
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-          <div className="flex h-16 items-center px-8 md:px-16">
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2" style={{ letterSpacing: '0.3em' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-[hsl(var(--chart-2))]">
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/>
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/>
-              </svg>
-              STARSHOT
-            </h1>
+          <div className="flex h-16 items-center px-4 md:px-16">
+            <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-[hsl(var(--chart-2))]">
+                  <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/>
+                  <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/>
+                </svg>
+                <h1 className="text-2xl font-bold text-white hidden md:inline" style={{ letterSpacing: '0.3em' }}>
+                  STARSHOT
+                </h1>
+            </div>
             <div className="flex-1 flex justify-center">
               <TabsList className="grid w-full grid-cols-2 sm:max-w-[280px] rounded-full">
                 <TabsTrigger value="chatgpt" className="rounded-full">
