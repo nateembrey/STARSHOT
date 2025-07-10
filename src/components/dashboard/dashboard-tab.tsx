@@ -192,7 +192,8 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                             dataKey="profit"
                             position="insideTop"
                             offset={12}
-                            fontSize={9}
+                            fontSize={12}
+                            fontWeight="bold"
                             fill="hsl(var(--primary))"
                             formatter={(value: number) =>
                               value.toLocaleString('en-US', {
