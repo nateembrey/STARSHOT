@@ -297,8 +297,12 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                     <TableCell className="font-medium p-2">{trade.asset}</TableCell>
                     <TableCell className="p-2">
                       <Badge
-                        variant={trade.type === 'BUY' ? 'secondary' : 'default'}
-                        className="flex items-center gap-1 w-fit bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                        variant={'secondary'}
+                        className={`flex items-center gap-1 w-fit border-transparent ${
+                          trade.type === 'BUY'
+                            ? 'bg-muted text-card-foreground hover:bg-muted/80'
+                            : 'bg-card text-muted-foreground hover:bg-card/80'
+                        }`}
                       >
                         {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                         {trade.type}
