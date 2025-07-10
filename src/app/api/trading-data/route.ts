@@ -55,9 +55,35 @@ export async function GET(request: Request) {
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
+    // --- DIAGNOSTIC LOGGING ---
+    console.log(`[${model.toUpperCase()}] Raw data from /status endpoint:`, JSON.stringify(statusApiResponse, null, 2));
+
+    // Process OPEN trades from /status endpoint
+    const openTradesSource = statusApiResponse?.trades ?? [];
+    if (!Array.isArray(openTradesSource)) {
+        console.error(`[${model.toUpperCase()}] Fetched open trades status data is not an array.`, openTradesSource);
+        throw new Error('Fetched open trades status data is not an array.');
+    }
+    const openTrades = openTradesSource.map((trade: any) => ({
+      asset: trade.pair || 'N/A',
+      type: trade.is_short ? 'SELL' : 'BUY',
+      status: 'Open',
+      profitPercentage: 0,
+      profitAbs: 0,
+      openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
+      closeDate: null,
+      openRate: trade.open_rate ?? 0,
+      closeRate: 0,
+      amount: trade.amount ?? 0,
+    })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+
+    // --- DIAGNOSTIC LOGGING ---
+    console.log(`[${model.toUpperCase()}] Processed openTrades array:`, JSON.stringify(openTrades, null, 2));
+    
     // Process CLOSED trades from /trades endpoint
     const allTradesSource = tradesApiResponse?.trades ?? [];
     if (!Array.isArray(allTradesSource)) {
+        console.error(`[${model.toUpperCase()}] Fetched historical trades data is not an array.`, allTradesSource);
         throw new Error('Fetched historical trades data is not an array.');
     }
     const closedTrades = allTradesSource
@@ -75,25 +101,6 @@ export async function GET(request: Request) {
         amount: trade.amount ?? 0,
       }))
       .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
-
-    // Process OPEN trades from /status endpoint
-    const openTradesSource = statusApiResponse?.trades ?? [];
-    if (!Array.isArray(openTradesSource)) {
-        throw new Error('Fetched open trades status data is not an array.');
-    }
-    const openTrades = openTradesSource.map((trade: any) => ({
-      asset: trade.pair || 'N/A',
-      type: trade.is_short ? 'SELL' : 'BUY',
-      status: 'Open',
-      profitPercentage: 0,
-      profitAbs: 0,
-      openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
-      closeDate: null,
-      openRate: trade.open_rate ?? 0,
-      closeRate: 0,
-      amount: trade.amount ?? 0,
-    })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
-
 
     // Calculations based only on the reliable closedTrades list
     const totalTrades = closedTrades.length;
@@ -123,7 +130,7 @@ export async function GET(request: Request) {
       winRate,
       winningTrades,
       losingTrades,
-      openTrades,
+      openTrades, // Use the correctly processed open trades
       closedTrades,
       tradeHistoryForCharts,
       cumulativeProfitHistory,
