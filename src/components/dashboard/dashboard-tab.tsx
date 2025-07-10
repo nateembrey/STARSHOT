@@ -79,6 +79,7 @@ export interface TradingData {
   cumulativeProfitHistory: ChartData[];
   biggestWin: number;
   percentageProfit: number;
+  rawStatusResponse?: any;
 }
 
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
@@ -116,8 +117,19 @@ const formatTradeDate = (dateString: string) => {
     return format(date, 'yyyy-MM-dd HH:mm:ss');
 };
 
+const OpenTradesTable = ({ trades, isLoading, hasData }: { trades: Trade[], isLoading: boolean, hasData: boolean }) => {
+    return (
+        <Card>
+            <CardHeader className="p-6">
+                <CardTitle className="text-lg">Open Trades</CardTitle>
+                <CardDescription className="text-xs">Real-time view of all trades currently in progress.</CardDescription>
+            </CardHeader>
+        </Card>
+    )
+}
 
-const TradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
+
+const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
             <CardHeader className="p-6">
@@ -306,7 +318,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
   return (
     <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
@@ -328,11 +340,28 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CardHeader>
                 <CardTitle>bumba</CardTitle>
             </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                  <Skeleton className="h-40 w-full" />
+              ) : data?.rawStatusResponse ? (
+                  <pre className="text-xs overflow-auto p-4 bg-muted rounded-md max-h-96">
+                      {JSON.stringify(data.rawStatusResponse, null, 2)}
+                  </pre>
+              ) : (
+                  <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
+                      No status data available.
+                  </div>
+              )}
+            </CardContent>
         </Card>
 
-        <Card />
+        <OpenTradesTable
+          trades={data?.openTrades ?? []}
+          isLoading={isLoading}
+          hasData={!!data && data.openTrades.length > 0}
+        />
 
-        <TradesTable 
+        <ClosedTradesTable 
             title="Recent Closed Trades"
             description="A history of all closed trades."
             trades={(data?.closedTrades ?? []).slice(0, 20)}

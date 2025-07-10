@@ -73,7 +73,7 @@ export async function GET(request: Request) {
         leverage: trade.leverage ?? 0,
         openRate: trade.open_rate ?? 0,
         currentRate: trade.current_rate ?? 0,
-        profitPercentage: (trade.profit_pct ?? 0), // Already in percent
+        profitPercentage: (trade.profit_pct ?? 0), 
         profitAbs: trade.profit_abs ?? 0,
         openDate: trade.open_date ? new Date(trade.open_date).toISOString() : new Date().toISOString(),
         open_timestamp: trade.open_timestamp ?? 0,
@@ -145,6 +145,7 @@ export async function GET(request: Request) {
       cumulativeProfitHistory,
       biggestWin,
       percentageProfit,
+      rawStatusResponse: statusApiResponse,
     };
 
     return NextResponse.json(formattedData);
