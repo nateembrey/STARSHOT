@@ -4,90 +4,115 @@
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard-tab';
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Notifications } from '@/components/dashboard/notifications';
 
+function usePageVisibility() {
+  const [isVisible, setIsVisible] = useState(typeof document === 'undefined' || document.visibilityState === 'visible');
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      setIsVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  return isVisible;
+}
+
+
 export default function DashboardPage() {
-  const [chatGptData, setChatGptData] = React.useState<TradingData | null>(null);
-  const [geminiData, setGeminiData] = React.useState<TradingData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [newTradesCount, setNewTradesCount] = React.useState(0);
-  const lastChatGptTradeCount = React.useRef<number | null>(null);
-  const lastGeminiTradeCount = React.useRef<number | null>(null);
+  const [chatGptData, setChatGptData] = useState<TradingData | null>(null);
+  const [geminiData, setGeminiData] = useState<TradingData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newTradesCount, setNewTradesCount] = useState(0);
+  const lastChatGptTradeCount = useRef<number | null>(null);
+  const lastGeminiTradeCount = useRef<number | null>(null);
+  const isVisible = usePageVisibility();
 
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    const fetchDataForModel = async (model: 'chatgpt' | 'gemini'): Promise<TradingData | null> => {
-      try {
-        const response = await fetch(`/api/trading-data?model=${model}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `Failed to fetch data for ${model}`);
-        }
-        return await response.json();
-      } catch (err: any) {
-        if (isMounted) {
-          toast({
-            variant: "destructive",
-            title: `Error fetching ${model} data`,
-            description: err.message,
-          });
-        }
-        return null;
+  const fetchDataForModel = useCallback(async (model: 'chatgpt' | 'gemini'): Promise<TradingData | null> => {
+    try {
+      const response = await fetch(`/api/trading-data?model=${model}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch data for ${model}`);
       }
-    };
-    
-    const fetchAllData = async (isInitialFetch = false) => {
-       if (!isMounted) return;
-       if (isInitialFetch) { 
-         setIsLoading(true);
-       }
-       const [chatgpt, gemini] = await Promise.all([
-         fetchDataForModel('chatgpt'),
-         fetchDataForModel('gemini'),
-       ]);
-       
-       if (isMounted) {
-         setChatGptData(chatgpt);
-         setGeminiData(gemini);
-         
-         let newlyCompleted = 0;
-         if (chatgpt) {
-            if (lastChatGptTradeCount.current !== null && chatgpt.totalTrades > lastChatGptTradeCount.current) {
-                newlyCompleted += (chatgpt.totalTrades - lastChatGptTradeCount.current);
-            }
-            lastChatGptTradeCount.current = chatgpt.totalTrades;
-         }
-
-         if (gemini) {
-             if (lastGeminiTradeCount.current !== null && gemini.totalTrades > lastGeminiTradeCount.current) {
-                newlyCompleted += (gemini.totalTrades - lastGeminiTradeCount.current);
-            }
-            lastGeminiTradeCount.current = gemini.totalTrades;
-         }
-
-         if (newlyCompleted > 0) {
-            setNewTradesCount(prev => prev + newlyCompleted);
-         }
-
-         if (isInitialFetch) {
-            setIsLoading(false);
-         }
-       }
+      return await response.json();
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: `Error fetching ${model} data`,
+        description: err.message,
+      });
+      return null;
     }
-
-    fetchAllData(true); // Initial fetch
-    const intervalId = setInterval(() => fetchAllData(false), 15000); // Subsequent fetches
-
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
   }, [toast]);
+
+  const fetchAllData = useCallback(async (isInitialFetch = false) => {
+     if (isInitialFetch) { 
+       setIsLoading(true);
+     }
+     const [chatgpt, gemini] = await Promise.all([
+       fetchDataForModel('chatgpt'),
+       fetchDataForModel('gemini'),
+     ]);
+     
+     setChatGptData(chatgpt);
+     setGeminiData(gemini);
+     
+     let newlyCompleted = 0;
+     if (chatgpt) {
+        if (lastChatGptTradeCount.current !== null && chatgpt.totalTrades > lastChatGptTradeCount.current) {
+            newlyCompleted += (chatgpt.totalTrades - lastChatGptTradeCount.current);
+        }
+        lastChatGptTradeCount.current = chatgpt.totalTrades;
+     }
+
+     if (gemini) {
+         if (lastGeminiTradeCount.current !== null && gemini.totalTrades > lastGeminiTradeCount.current) {
+            newlyCompleted += (gemini.totalTrades - lastGeminiTradeCount.current);
+        }
+        lastGeminiTradeCount.current = gemini.totalTrades;
+     }
+
+     if (newlyCompleted > 0) {
+        setNewTradesCount(prev => prev + newlyCompleted);
+     }
+
+     if (isInitialFetch) {
+        setIsLoading(false);
+     }
+  }, [fetchDataForModel]);
+
+  useEffect(() => {
+    fetchAllData(true); // Initial fetch right away
+  }, [fetchAllData]);
+
+  useEffect(() => {
+    if (isVisible) {
+      // Fetch immediately when tab becomes visible
+      fetchAllData(false);
+
+      const intervalId = setInterval(() => {
+        fetchAllData(false);
+      }, 15000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [isVisible, fetchAllData]);
+
 
   const handleClearNotifications = () => {
     setNewTradesCount(0);
