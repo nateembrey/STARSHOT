@@ -92,12 +92,12 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                     </>
                 ) : hasData ? (
                     <>
-                        <div className="text-4xl font-bold tracking-tight">{value}</div>
+                        <div className="text-5xl font-bold tracking-tight">{value}</div>
                         {subtext && <p className="text-xs text-muted-foreground mt-2">{subtext}</p>}
                     </>
                 ) : (
                     <>
-                        <div className="text-4xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
+                        <div className="text-5xl font-bold tracking-tight text-muted-foreground/50">N/A</div>
                         {subtext && <p className="text-xs text-muted-foreground/50 mt-2">No data available</p>}
                     </>
                 )}
