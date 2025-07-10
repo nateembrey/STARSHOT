@@ -121,7 +121,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                 <CardTitle className="text-xl">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
-            <CardContent className={cn('p-8', !isLoading && 'animate-content-in')}>
+            <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
                 {isLoading ? (
                     <div className="space-y-2 px-2">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -255,7 +255,19 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 }));
 
             const result = await predictProfit({ history: historyForPrediction, duration });
-            setPrediction(result.prediction);
+            // Add the last historical point to the beginning of the prediction to connect the lines
+            const lastHistoricalPoint = data[data.length - 1];
+            if (lastHistoricalPoint) {
+                const bridgePoint = {
+                    name: lastHistoricalPoint.name,
+                    date: new Date(lastHistoricalPoint.date).toISOString().split('T')[0],
+                    predictedProfit: lastHistoricalPoint.cumulativeProfit || 0,
+                };
+                 setPrediction([bridgePoint, ...result.prediction]);
+            } else {
+                 setPrediction(result.prediction);
+            }
+
         } catch (error) {
             console.error("Prediction failed:", error);
             // Optionally, show a toast notification here
@@ -272,9 +284,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         }
     };
 
-    const lastHistoricalPoint = data.length > 0 ? data[data.length - 1] : null;
-
-    const combinedChartData = isFlipped && prediction && lastHistoricalPoint ? [
+    const combinedChartData = isFlipped && prediction ? [
         ...data.map(d => ({ ...d, predictedProfit: null })),
         ...prediction.map(p => ({
             name: p.name,
@@ -282,7 +292,8 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
             cumulativeProfit: null, // Historical line stops
             predictedProfit: p.predictedProfit,
         }))
-    ] : data;
+    ] : data.map(d => ({ ...d, predictedProfit: null }));
+
 
     const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
     const isPositive = finalProfit >= 0;
@@ -290,8 +301,8 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const gradientId = isPositive ? "gradient-green" : "gradient-red";
     
     return (
-        <Card className="perspective">
-            <div className={cn("relative w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
+        <Card className="perspective relative">
+            <div className={cn("w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
                 {/* Front Face */}
                 <div className="w-full h-full backface-hidden">
                     <CardHeader className="p-8 flex flex-row items-start justify-between">
@@ -331,7 +342,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 </div>
                 
                 {/* Back Face */}
-                <div className="absolute top-0 left-0 w-full h-full backface-hidden rotate-y-180">
+                <div className="absolute top-0 left-0 w-full h-full backface-hidden rotate-y-180 bg-card rounded-lg border">
                      <CardHeader className="p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-xl">Profit Forecast</CardTitle>
@@ -358,16 +369,20 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             <ChartContainer config={{ cumulativeProfit: { label: 'History', color: 'hsl(var(--chart-2))' }, predictedProfit: { label: 'Prediction', color: 'hsl(var(--chart-3))' } }} className="h-[168px] w-full">
                                <ComposedChart accessibilityLayer data={combinedChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} domain={['dataMin', 'dataMax']}/>
+                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDuplicatedCategory={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} domain={['dataMin - 100', 'dataMax + 100']}/>
                                     <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                                     <defs>
                                         <linearGradient id="gradient-blue" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.4}/>
                                             <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0}/>
                                         </linearGradient>
+                                         <linearGradient id="gradient-green-solid" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                                        </linearGradient>
                                     </defs>
-                                    <Area type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-2))" fill="transparent" strokeWidth={2} name="History" />
+                                    <Area type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-2))" fill="url(#gradient-green-solid)" strokeWidth={2} name="History" />
                                     <Area type="monotone" dataKey="predictedProfit" stroke="hsl(var(--chart-3))" strokeDasharray="4 4" fill="url(#gradient-blue)" strokeWidth={2} name="Prediction" />
                                 </ComposedChart>
                             </ChartContainer>
