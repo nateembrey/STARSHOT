@@ -119,7 +119,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 pt-0">
+            <CardContent className="p-8">
                 {isLoading ? (
                     <div className="space-y-2 px-2">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -147,7 +147,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                         <TableRow key={index}>
                                             <TableCell className="font-medium whitespace-nowrap text-xs">{trade.asset}</TableCell>
                                             <TableCell>
-                                                <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className={`text-xs ${trade.type === 'BUY' ? 'bg-blue-900/50 text-blue-300' : 'bg-purple-900/50 text-purple-300'}`}>
+                                                <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className="text-xs">
                                                     {trade.type}
                                                 </Badge>
                                             </TableCell>
@@ -305,7 +305,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="% Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins/Losses" value={`${data?.winningTrades ?? 0}/${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
@@ -323,7 +323,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
 
         <Card>
             <CardHeader className="p-8">
-                <CardTitle>Open Trades</CardTitle>
+                <CardTitle className="text-lg">Open Trades</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               {isLoading ? (
@@ -379,7 +379,3 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
-
-    
-
-    
