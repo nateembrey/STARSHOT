@@ -55,9 +55,6 @@ export async function GET(request: Request) {
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
-    // --- DIAGNOSTIC LOGGING ---
-    console.log(`[${model.toUpperCase()}] Raw data from /status endpoint:`, JSON.stringify(statusApiResponse, null, 2));
-
     // Process OPEN trades from /status endpoint
     const openTradesSource = statusApiResponse?.trades;
     const openTrades = Array.isArray(openTradesSource) ? openTradesSource.map((trade: any) => ({
@@ -71,11 +68,12 @@ export async function GET(request: Request) {
       openRate: trade.open_rate ?? 0,
       closeRate: 0,
       amount: trade.amount ?? 0,
-    })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime()) : [];
+    })).sort((a: any, b: any) => {
+        const dateA = a.openDate ? new Date(a.openDate).getTime() : 0;
+        const dateB = b.openDate ? new Date(b.openDate).getTime() : 0;
+        return dateB - dateA;
+    }) : [];
 
-    // --- DIAGNOSTIC LOGGING ---
-    console.log(`[${model.toUpperCase()}] Processed openTrades array:`, JSON.stringify(openTrades, null, 2));
-    
     // Process CLOSED trades from /trades endpoint
     const allTradesSource = tradesApiResponse?.trades;
     const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
@@ -92,7 +90,11 @@ export async function GET(request: Request) {
         closeRate: trade.close_rate ?? 0,
         amount: trade.amount ?? 0,
       }))
-      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime()) : [];
+      .sort((a: any, b: any) => {
+          const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
+          const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
+          return dateB - dateA;
+      }) : [];
 
     // Calculations based only on the reliable closedTrades list
     const totalTrades = closedTrades.length;
@@ -122,7 +124,7 @@ export async function GET(request: Request) {
       winRate,
       winningTrades,
       losingTrades,
-      openTrades, // Use the correctly processed open trades
+      openTrades,
       closedTrades,
       tradeHistoryForCharts,
       cumulativeProfitHistory,
