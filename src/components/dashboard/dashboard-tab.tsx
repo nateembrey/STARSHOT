@@ -167,48 +167,48 @@ export function DashboardTab({ modelName }: { modelName: string }) {
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue}</div>
+          <CardContent className="p-4 pt-0">
+            <div className="text-xl font-bold">{totalRevenue}</div>
             <p className="text-xs text-muted-foreground">
               {pnl} from last month
             </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">P&L ({modelName})</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{pnl}</div>
+          <CardContent className="p-4 pt-0">
+            <div className={`text-xl font-bold ${pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{pnl}</div>
             <p className="text-xs text-muted-foreground">
               {pnlPercentage} vs last month
             </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{trades}</div>
+          <CardContent className="p-4 pt-0">
+            <div className="text-xl font-bold">{trades}</div>
             <p className="text-xs text-muted-foreground">
               +180 since last hour
             </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{winRate}</div>
+          <CardContent className="p-4 pt-0">
+            <div className="text-xl font-bold">{winRate}</div>
             <p className="text-xs text-muted-foreground">
               +1.2% since yesterday
             </p>
@@ -217,12 +217,12 @@ export function DashboardTab({ modelName }: { modelName: string }) {
       </div>
 
       <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{modelName} Performance</CardTitle>
+        <CardHeader className="p-4">
+          <CardTitle className="text-lg">{modelName} Performance</CardTitle>
           <CardDescription>January - July</CardDescription>
         </CardHeader>
-        <CardContent className="pl-2">
-          <ChartContainer config={singleModelChartConfig} className="h-[250px] w-full">
+        <CardContent className="pl-2 pr-4 pb-4">
+          <ChartContainer config={singleModelChartConfig} className="h-[200px] w-full">
               <LineChart data={singleModelChartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis 
@@ -246,12 +246,12 @@ export function DashboardTab({ modelName }: { modelName: string }) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Performance Comparison</CardTitle>
+          <CardHeader className="p-4">
+            <CardTitle className="text-lg">Performance Comparison</CardTitle>
             <CardDescription>ChatGPT vs. Gemini</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
+          <CardContent className="pl-2 pr-4 pb-4">
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
                 <LineChart data={chartData}>
                     <CartesianGrid vertical={false} />
                     <XAxis 
@@ -275,27 +275,27 @@ export function DashboardTab({ modelName }: { modelName: string }) {
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Trades</CardTitle>
+          <CardHeader className="p-4">
+            <CardTitle className="text-lg">Recent Trades</CardTitle>
             <CardDescription>
               {`The latest trades executed by ${modelName}.`}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Asset</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Profit</TableHead>
+                  <TableHead className="h-10 px-2">Asset</TableHead>
+                  <TableHead className="h-10 px-2">Type</TableHead>
+                  <TableHead className="h-10 px-2">Status</TableHead>
+                  <TableHead className="h-10 px-2 text-right">Profit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentTrades.map((trade, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">{trade.asset}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium p-2">{trade.asset}</TableCell>
+                    <TableCell className="p-2">
                       <Badge
                         variant={trade.type === 'BUY' ? 'default' : 'destructive'}
                         className="flex items-center gap-1 w-fit"
@@ -304,12 +304,12 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                         {trade.type}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="p-2">
                         <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}>
                             {trade.status}
                         </Badge>
                     </TableCell>
-                    <TableCell className={`text-right font-semibold ${trade.profit === 'Pending' ? '' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                    <TableCell className={`p-2 text-right font-semibold ${trade.profit === 'Pending' ? '' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
                       {trade.profit}
                     </TableCell>
                   </TableRow>
