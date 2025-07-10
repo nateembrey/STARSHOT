@@ -33,6 +33,7 @@ import {
   YAxis,
   Cell,
   ReferenceLine,
+  LabelList,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
@@ -180,13 +181,28 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                  <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">No chart data.</div>
             ) : (
                  <ChartContainer config={{ profit: { label: 'Profit' } }} className="h-[200px] w-full">
-                    <BarChart accessibilityLayer data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <BarChart accessibilityLayer data={data} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
                         <Bar dataKey="profit" radius={2}>
+                          <LabelList
+                            dataKey="profit"
+                            position="insideTop"
+                            offset={5}
+                            fontSize={9}
+                            fill="hsl(var(--primary-foreground))"
+                            formatter={(value: number) =>
+                              value.toLocaleString('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })
+                            }
+                          />
                           {data.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
                           ))}
