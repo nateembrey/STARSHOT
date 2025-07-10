@@ -55,30 +55,35 @@ export async function GET(request: Request) {
 
   let browser;
   try {
-    console.log('SCRAPER_LOG: Launching browser...');
+    console.log('SCRAPER_LOG: STEP 1 - Launching browser...');
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
+    console.log('SCRAPER_LOG: STEP 2 - Browser launched successfully.');
+    
     const page = await browser.newPage();
+    console.log('SCRAPER_LOG: STEP 3 - New page created.');
+    
     await page.setUserAgent(a);
     await page.setViewport({width: 1366, height: 768});
+    console.log('SCRAPER_LOG: STEP 4 - Page configured.');
 
     // Login
-    console.log(`SCRAPER_LOG: Navigating to login page: ${loginUrl}`);
+    console.log(`SCRAPER_LOG: STEP 5 - Navigating to login page: ${loginUrl}`);
     await page.goto(loginUrl, {waitUntil: 'networkidle2'});
     
-    console.log('SCRAPER_LOG: Typing username and password...');
+    console.log('SCRAPER_LOG: STEP 6 - Typing username and password...');
     await page.type(usernameSelector, username);
     await page.type(passwordSelector, password);
     
-    console.log(`SCRAPER_LOG: Clicking login button: ${loginButtonSelector}`);
+    console.log(`SCRAPER_LOG: STEP 7 - Clicking login button: ${loginButtonSelector}`);
     await page.click(loginButtonSelector);
     
-    console.log('SCRAPER_LOG: Login button clicked. Waiting for dashboard to load...');
+    console.log('SCRAPER_LOG: STEP 8 - Waiting for dashboard to load...');
     // This is a crucial step: wait for a specific element that appears only when data is loaded.
     await page.waitForSelector('.p-datatable-tbody', { timeout: 20000 });
-    console.log('SCRAPER_LOG: Dashboard loaded successfully. Starting data extraction.');
+    console.log('SCRAPER_LOG: STEP 9 - Dashboard loaded successfully. Starting data extraction.');
 
 
     // --- DATA EXTRACTION ---
@@ -125,7 +130,7 @@ export async function GET(request: Request) {
           };
         }).slice(0, 5)
     );
-    console.log('SCRAPER_LOG: Data extraction complete.');
+    console.log('SCRAPER_LOG: STEP 10 - Data extraction complete.');
     // --- END DATA EXTRACTION ---
 
     return NextResponse.json({
@@ -141,11 +146,17 @@ export async function GET(request: Request) {
        console.error('SCRAPER_ERROR_DETAIL:', error);
     }
     
+    // Attempt to take screenshot for debugging, even on error
     if (browser) {
-        const page = (await browser.pages())[0];
-        if (page) {
-            console.log('SCRAPER_LOG: Taking a debug screenshot to debug-screenshot.png');
-            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
+        try {
+            const page = (await browser.pages())[0];
+            if (page) {
+                console.log('SCRAPER_LOG: Taking a debug screenshot to debug-screenshot.png');
+                await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
+                console.log('SCRAPER_LOG: Screenshot saved.');
+            }
+        } catch (screenshotError) {
+            console.error('SCRAPER_ERROR: Could not take screenshot.', screenshotError);
         }
     }
     
