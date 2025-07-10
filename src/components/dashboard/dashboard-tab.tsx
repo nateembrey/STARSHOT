@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Card,
   CardContent,
@@ -19,7 +21,11 @@ import {
   Activity,
   ArrowUp,
   ArrowDown,
+  TrendingUp,
 } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+
 
 export function DashboardTab({ modelName }: { modelName: string }) {
   const isGpt = modelName === 'ChatGPT';
@@ -27,7 +33,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
   const totalRevenue = isGpt ? '$45,231.89' : '$39,121.42';
   const pnl = isGpt ? '+$2,501.32' : '+$1,890.12';
   const pnlPercentage = isGpt ? '+20.1%' : '+18.5%';
-  const trades = isGpt ? '+1,230' : '+1,150';
+  const trades = isGpt ? '1,230' : '1,150';
   const winRate = isGpt ? '72.5%' : '70.1%';
 
   const recentTrades = isGpt ? [
@@ -55,13 +61,21 @@ export function DashboardTab({ modelName }: { modelName: string }) {
       profit: '-$89.30',
       status: 'Closed',
     },
-    {
+     {
       asset: 'ADA/USD',
       type: 'BUY',
       amount: '5000 ADA',
       price: '$0.45',
       profit: 'Pending',
       status: 'Open',
+    },
+     {
+      asset: 'XRP/USD',
+      type: 'SELL',
+      amount: '10000 XRP',
+      price: '$0.52',
+      profit: '+$231.98',
+      status: 'Closed',
     },
   ] : [
     {
@@ -96,7 +110,44 @@ export function DashboardTab({ modelName }: { modelName: string }) {
         profit: 'Pending',
         status: 'Open',
       },
+      {
+        asset: 'AVAX/USD',
+        type: 'BUY',
+        amount: '150 AVAX',
+        price: '$35.70',
+        profit: '-$112.50',
+        status: 'Closed',
+      },
   ];
+
+  const chartData = isGpt ? [
+    { month: 'Jan', gpt: 4000, gemini: 2400 },
+    { month: 'Feb', gpt: 3000, gemini: 1398 },
+    { month: 'Mar', gpt: 2000, gemini: 9800 },
+    { month: 'Apr', gpt: 2780, gemini: 3908 },
+    { month: 'May', gpt: 1890, gemini: 4800 },
+    { month: 'Jun', gpt: 2390, gemini: 3800 },
+    { month: 'Jul', gpt: 3490, gemini: 4300 },
+    ] : [
+    { month: 'Jan', gpt: 3800, gemini: 2600 },
+    { month: 'Feb', gpt: 3200, gemini: 1598 },
+    { month: 'Mar', gpt: 2200, gemini: 8800 },
+    { month: 'Apr', gpt: 2980, gemini: 4108 },
+    { month: 'May', gpt: 2090, gemini: 5200 },
+    { month: 'Jun', gpt: 2590, gemini: 4000 },
+    { month: 'Jul', gpt: 3690, gemini: 4500 },
+  ];
+
+  const chartConfig = {
+    gpt: {
+      label: 'ChatGPT',
+      color: 'hsl(var(--chart-1))',
+    },
+    gemini: {
+      label: 'Gemini',
+      color: 'hsl(var(--chart-2))',
+    },
+  };
 
   return (
     <>
@@ -115,11 +166,11 @@ export function DashboardTab({ modelName }: { modelName: string }) {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">P&L</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">P&L ({modelName})</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pnl}</div>
+            <div className={`text-2xl font-bold ${pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{pnl}</div>
             <p className="text-xs text-muted-foreground">
               {pnlPercentage} vs last month
             </p>
@@ -153,13 +204,31 @@ export function DashboardTab({ modelName }: { modelName: string }) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Overview</CardTitle>
+            <CardTitle>Performance Overview</CardTitle>
+            <CardDescription>January - July</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            {/* Chart will go here */}
-            <div className="h-[350px] w-full flex items-center justify-center text-muted-foreground bg-muted/50 rounded-lg">
-                Performance Chart Placeholder
-            </div>
+            <ChartContainer config={chartConfig} className="h-[350px] w-full">
+                <LineChart data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis 
+                        dataKey="month" 
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        />
+                    <YAxis 
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        tickFormatter={(value) => `$${value / 1000}k`}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Line dataKey="gpt" type="monotone" stroke="var(--color-gpt)" strokeWidth={2} dot={false} name="ChatGPT" />
+                    <Line dataKey="gemini" type="monotone" stroke="var(--color-gemini)" strokeWidth={2} dot={false} name="Gemini" />
+                </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
@@ -197,7 +266,7 @@ export function DashboardTab({ modelName }: { modelName: string }) {
                             {trade.status}
                         </Badge>
                     </TableCell>
-                    <TableCell className={`text-right ${trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                    <TableCell className={`text-right font-semibold ${trade.profit === 'Pending' ? '' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
                       {trade.profit}
                     </TableCell>
                   </TableRow>

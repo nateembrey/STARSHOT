@@ -1,8 +1,7 @@
 import { Bot, BrainCircuit } from 'lucide-react';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChatGptTab } from '@/components/dashboard/chatgpt-tab';
-import { GeminiTab } from '@/components/dashboard/gemini-tab';
+import { DashboardTab } from '@/components/dashboard/dashboard-tab';
 
 export default function DashboardPage() {
   return (
@@ -28,10 +27,10 @@ export default function DashboardPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="chatgpt" className="space-y-4">
-            <ChatGptTab />
+            <DashboardTab modelName="ChatGPT" />
           </TabsContent>
           <TabsContent value="gemini" className="space-y-4">
-            <GeminiTab />
+            <DashboardTab modelName="Gemini" />
           </TabsContent>
         </Tabs>
       </main>
