@@ -255,7 +255,6 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 }));
 
             const result = await predictProfit({ history: historyForPrediction, duration });
-            // Add the last historical point to the beginning of the prediction to connect the lines
             const lastHistoricalPoint = data[data.length - 1];
             if (lastHistoricalPoint) {
                 const bridgePoint = {
@@ -279,7 +278,6 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const handleFlip = () => {
         setIsFlipped(prev => !prev);
         if (!isFlipped && !prediction) {
-            // If flipping to back for the first time, run default prediction
             handlePredict(predictionDuration);
         }
     };
@@ -289,7 +287,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         ...prediction.map(p => ({
             name: p.name,
             date: p.date,
-            cumulativeProfit: null, // Historical line stops
+            cumulativeProfit: null, 
             predictedProfit: p.predictedProfit,
         }))
     ] : data.map(d => ({ ...d, predictedProfit: null }));
@@ -301,10 +299,10 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const gradientId = isPositive ? "gradient-green" : "gradient-red";
     
     return (
-        <Card className="perspective relative">
+        <div className="relative perspective h-[364px]">
             <div className={cn("w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
                 {/* Front Face */}
-                <div className="w-full h-full backface-hidden">
+                <Card className="absolute w-full h-full backface-hidden">
                     <CardHeader className="p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-xl">Cumulative Profit</CardTitle>
@@ -339,10 +337,10 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             </ChartContainer>
                         )}
                     </CardContent>
-                </div>
+                </Card>
                 
                 {/* Back Face */}
-                <div className="absolute top-0 left-0 w-full h-full backface-hidden rotate-y-180 bg-card rounded-lg border">
+                <Card className="absolute w-full h-full backface-hidden rotate-y-180">
                      <CardHeader className="p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-xl">Profit Forecast</CardTitle>
@@ -369,7 +367,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             <ChartContainer config={{ cumulativeProfit: { label: 'History', color: 'hsl(var(--chart-2))' }, predictedProfit: { label: 'Prediction', color: 'hsl(var(--chart-3))' } }} className="h-[168px] w-full">
                                <ComposedChart accessibilityLayer data={combinedChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDuplicatedCategory={false} />
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDuplicatedCategory={false} tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}/>
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} domain={['dataMin - 100', 'dataMax + 100']}/>
                                     <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                                     <defs>
@@ -388,9 +386,9 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             </ChartContainer>
                         )}
                     </CardContent>
-                </div>
+                </Card>
             </div>
-        </Card>
+        </div>
     );
 };
 
@@ -500,3 +498,5 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
     </div>
   );
 }
+
+    
