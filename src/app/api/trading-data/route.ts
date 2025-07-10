@@ -97,12 +97,7 @@ export async function GET(request: Request) {
         openRate: trade.open_rate ?? 0,
         closeRate: trade.close_rate ?? 0,
         amount: trade.amount ?? 0,
-      }))
-      .sort((a: any, b: any) => {
-          const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
-          const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
-          return dateB - dateA;
-      }) : [];
+      })) : [];
 
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
@@ -113,25 +108,40 @@ export async function GET(request: Request) {
     const totalInvested = closedTrades.reduce((acc, trade) => acc + (trade.amount * trade.openRate), 0);
     const percentageProfit = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
     
-    const tradeHistoryForCharts = closedTrades
-        .slice() 
-        .reverse()
-        .map((trade: any, index: number) => ({
-            name: `Trade ${index + 1}`,
-            date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
-            profit: trade.profitAbs ?? 0,
-        }));
+    // Sort trades chronologically (oldest first) for charts
+    const chronoSortedTrades = closedTrades
+        .slice()
+        .sort((a: any, b: any) => {
+            const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
+            const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
+            return dateA - dateB;
+        });
+
+    const tradeHistoryForCharts = chronoSortedTrades.map((trade: any, index: number) => ({
+        name: `Trade ${index + 1}`,
+        date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
+        profit: trade.profitAbs ?? 0,
+    }));
     
     let cumulativeProfit = 0;
-    const cumulativeProfitHistoryWithTrades = tradeHistoryForCharts.map((trade: any) => {
-        cumulativeProfit += trade.profit;
-        return { ...trade, cumulativeProfit };
-    });
-    
     const cumulativeProfitHistory = [
       { name: 'Start', date: '', profit: 0, cumulativeProfit: 0 },
-      ...cumulativeProfitHistoryWithTrades
+      ...chronoSortedTrades.map((trade: any, index: number) => {
+          cumulativeProfit += trade.profitAbs ?? 0;
+          return {
+              name: `Trade ${index + 1}`,
+              date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
+              profit: trade.profitAbs ?? 0,
+              cumulativeProfit: cumulativeProfit
+          };
+      })
     ];
+
+    const recentClosedTrades = closedTrades.slice().sort((a: any, b: any) => {
+        const dateA = a.closeDate ? new Date(a.closeDate).getTime() : 0;
+        const dateB = b.closeDate ? new Date(b.closeDate).getTime() : 0;
+        return dateB - dateA;
+    });
 
     const formattedData = {
       pnl,
@@ -140,7 +150,7 @@ export async function GET(request: Request) {
       winningTrades,
       losingTrades,
       openTrades,
-      closedTrades,
+      closedTrades: recentClosedTrades,
       tradeHistoryForCharts,
       cumulativeProfitHistory,
       biggestWin,
