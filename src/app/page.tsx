@@ -10,7 +10,7 @@ export default function DashboardPage() {
           <div className="flex h-14 items-center px-4">
             <h1 className="text-2xl font-bold tracking-tight text-white">STARSHOT</h1>
             <div className="flex-1 flex justify-center">
-              <TabsList className="grid w-full grid-cols-2 sm:max-w-[360px] rounded-full">
+              <TabsList className="grid w-full grid-cols-2 sm:max-w-[240px] rounded-full">
                 <TabsTrigger value="chatgpt" className="rounded-full">
                   CHATGPT
                 </TabsTrigger>
