@@ -50,54 +50,52 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    // Fetch all trades for historical data, and open trades from /status
     const [tradesApiResponse, statusApiResponse] = await Promise.all([
         apiFetch(`${config.baseUrl}/trades`, headers),
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
+    // Process CLOSED trades from /trades endpoint
     const allTradesSource = tradesApiResponse?.trades ?? [];
-
     if (!Array.isArray(allTradesSource)) {
-        throw new Error('Fetched trades data is not an array.');
+        throw new Error('Fetched historical trades data is not an array.');
     }
-    
-    const allTrades = allTradesSource.map((trade: any) => ({
-      asset: trade.pair || 'N/A',
-      type: trade.is_short ? 'SELL' : 'BUY',
-      status: trade.close_date_ts === null ? 'Open' : 'Closed',
-      profitPercentage: (trade.profit_ratio ?? 0) * 100,
-      profitAbs: trade.profit_abs ?? 0,
-      openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
-      closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
-      openRate: trade.open_rate ?? 0,
-      closeRate: trade.close_rate ?? 0,
-      amount: trade.amount ?? 0,
-    }));
+    const closedTrades = allTradesSource
+      .filter((trade: any) => trade.close_date_ts !== null)
+      .map((trade: any) => ({
+        asset: trade.pair || 'N/A',
+        type: trade.is_short ? 'SELL' : 'BUY',
+        status: 'Closed',
+        profitPercentage: (trade.profit_ratio ?? 0) * 100,
+        profitAbs: trade.profit_abs ?? 0,
+        openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
+        closeDate: trade.close_date_ts ? new Date(trade.close_date_ts).toISOString() : null,
+        openRate: trade.open_rate ?? 0,
+        closeRate: trade.close_rate ?? 0,
+        amount: trade.amount ?? 0,
+      }))
+      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
 
+    // Process OPEN trades from /status endpoint
     const openTradesSource = statusApiResponse?.trades ?? [];
     if (!Array.isArray(openTradesSource)) {
-        throw new Error('Fetched status data is not an array.');
+        throw new Error('Fetched open trades status data is not an array.');
     }
-
     const openTrades = openTradesSource.map((trade: any) => ({
       asset: trade.pair || 'N/A',
       type: trade.is_short ? 'SELL' : 'BUY',
-      status: 'Open', // From /status, so always open
-      profitPercentage: 0, // Not applicable for open trades
-      profitAbs: 0, // Not applicable for open trades
+      status: 'Open',
+      profitPercentage: 0,
+      profitAbs: 0,
       openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
       closeDate: null,
       openRate: trade.open_rate ?? 0,
-      closeRate: 0, // Not applicable for open trades
+      closeRate: 0,
       amount: trade.amount ?? 0,
     })).sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
 
 
-    const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
-      .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
-
-    // --- Calculations based only on the reliable closedTrades list ---
+    // Calculations based only on the reliable closedTrades list
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
     const losingTrades = totalTrades - winningTrades;
@@ -125,8 +123,8 @@ export async function GET(request: Request) {
       winRate,
       winningTrades,
       losingTrades,
-      openTrades, // Sourced from /status
-      closedTrades, // Sourced from /trades
+      openTrades,
+      closedTrades,
       tradeHistoryForCharts,
       cumulativeProfitHistory,
     };
