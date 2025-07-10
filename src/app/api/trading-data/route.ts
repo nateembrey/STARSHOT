@@ -1,3 +1,4 @@
+
 'use server';
 
 import {NextResponse} from 'next/server';
@@ -32,7 +33,7 @@ async function apiFetch(url: string, headers: HeadersInit) {
     return response.json();
   } catch (e: any) {
     console.error(`Failed to fetch or parse JSON from ${url}:`, e.message);
-    return {};
+    return null; // Return null on fetch/parse failure
   }
 }
 
@@ -49,13 +50,18 @@ export async function GET(request: Request) {
   const headers = { ...authHeaders, 'Content-Type': 'application/json' };
 
   try {
-    const tradesData = await apiFetch(`${config.baseUrl}/trades`, headers);
-    const allTradesSource = tradesData?.trades ?? [];
+    const tradesApiResponse = await apiFetch(`${config.baseUrl}/trades`, headers);
+    const allTradesSource = tradesApiResponse?.trades ?? [];
+
+    if (!Array.isArray(allTradesSource)) {
+        throw new Error('Fetched trades data is not an array.');
+    }
 
     const allTrades = allTradesSource.map((trade: any) => ({
       asset: trade.pair || 'N/A',
       type: trade.is_short ? 'SELL' : 'BUY',
-      status: trade.close_date_ts != null ? 'Closed' : 'Open',
+      // Explicitly check for null to determine status
+      status: trade.close_date_ts === null ? 'Open' : 'Closed',
       profitPercentage: (trade.profit_ratio ?? 0) * 100,
       profitAbs: trade.profit_abs ?? 0,
       openDate: trade.open_date_ts ? new Date(trade.open_date_ts).toISOString() : new Date().toISOString(),
@@ -65,12 +71,14 @@ export async function GET(request: Request) {
       amount: trade.amount ?? 0,
     }));
     
+    // Strict filtering based on status
     const openTrades = allTrades.filter((t: any) => t.status === 'Open')
       .sort((a: any, b: any) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
 
     const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
       .sort((a: any, b: any) => new Date(b.closeDate!).getTime() - new Date(a.closeDate!).getTime());
 
+    // --- Calculations based only on the reliable closedTrades list ---
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
     const losingTrades = totalTrades - winningTrades;
@@ -83,7 +91,7 @@ export async function GET(request: Request) {
         .map((trade: any, index: number) => ({
             name: `Trade ${index + 1}`,
             date: trade.closeDate ? new Date(trade.closeDate).toLocaleDateString() : '',
-            profit: trade.profitAbs,
+            profit: trade.profitAbs ?? 0, // Safe default
         }));
     
     let cumulativeProfit = 0;
