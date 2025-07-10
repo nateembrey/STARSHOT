@@ -189,7 +189,6 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <Bar 
                           dataKey="profit" 
                           radius={2}
-                          fill="var(--color-profit)"
                         >
                             {data.map((entry, index) => (
                                 <Rectangle key={`cell-${index}`} fill={entry.profit >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--accent))'} />
@@ -203,27 +202,12 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
 );
 
 const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => {
-    const startProfit = data.length > 0 ? data[0].cumulativeProfit ?? 0 : 0;
-    
-    const mintGreen = "hsl(var(--chart-2))";
-    const orangeRed = "hsl(var(--accent))";
-    
-    // Define gradients
-    const gradientIdGreen = "gradient-green";
-    const gradientIdRed = "gradient-red";
-    const gradientOffset = () => {
-        if (!data || data.length === 0) return 0;
-        const dataMax = Math.max(...data.map(i => i.cumulativeProfit ?? 0));
-        const dataMin = Math.min(...data.map(i => i.cumulativeProfit ?? 0));
+    const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
+    const isPositive = finalProfit >= 0;
 
-        if (dataMax <= startProfit) return 0; // All below
-        if (dataMin >= startProfit) return 1; // All above
-        
-        const range = dataMax - dataMin;
-        return (dataMax - startProfit) / range;
-    };
-    const off = gradientOffset();
-
+    const mainColor = isPositive ? "hsl(var(--chart-2))" : "hsl(var(--accent))";
+    const gradientId = isPositive ? "gradient-green" : "gradient-red";
+    
     return (
         <Card>
             <CardHeader>
@@ -243,18 +227,13 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} domain={['dataMin', 'dataMax']} tickFormatter={(value) => `$${value}`} />
                             <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                             <defs>
-                                <linearGradient id={gradientIdGreen} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset={off} stopColor={mintGreen} stopOpacity={0.4}/>
-                                    <stop offset={off} stopColor={mintGreen} stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id={gradientIdRed} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset={off} stopColor={orangeRed} stopOpacity={0.4}/>
-                                    <stop offset={off} stopColor={orangeRed} stopOpacity={0}/>
+                                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={mainColor} stopOpacity={0.4}/>
+                                    <stop offset="95%" stopColor={mainColor} stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
-                            <ReferenceLine y={startProfit} label={{ value: "Start", position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                            <Area type="monotone" dataKey="cumulativeProfit" stroke={mintGreen} fill={`url(#${gradientIdGreen})`} strokeWidth={2} />
-                            <Area type="monotone" dataKey="cumulativeProfit" stroke={orangeRed} fill={`url(#${gradientIdRed})`} strokeWidth={2} />
+                            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                            <Area type="monotone" dataKey="cumulativeProfit" stroke={mainColor} fill={`url(#${gradientId})`} strokeWidth={2} />
                         </AreaChart>
                     </ChartContainer>
                 )}
