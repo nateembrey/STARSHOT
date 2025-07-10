@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     ]);
     
     const openTradesSource = statusApiResponse?.orders ?? [];
-    const openTrades = openTradesSource
+    const openTrades = Array.isArray(openTradesSource) ? openTradesSource
       .filter((trade: any) => trade.is_open === true)
       .map((trade: any) => ({
         asset: trade.pair || 'N/A',
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
         const dateA = a.openDate ? new Date(a.openDate).getTime() : 0;
         const dateB = b.openDate ? new Date(b.openDate).getTime() : 0;
         return dateB - dateA;
-    });
+    }) : [];
 
     const allTradesSource = tradesApiResponse?.trades;
     const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
@@ -142,6 +142,7 @@ export async function GET(request: Request) {
       cumulativeProfitHistory,
       biggestWin,
       percentageProfit,
+      rawStatus: statusApiResponse,
     };
 
     return NextResponse.json(formattedData);

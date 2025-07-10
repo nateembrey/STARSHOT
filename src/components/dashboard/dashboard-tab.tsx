@@ -69,6 +69,7 @@ export interface TradingData {
   cumulativeProfitHistory: ChartData[];
   biggestWin: number;
   percentageProfit: number;
+  rawStatus: any;
 }
 
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
@@ -270,6 +271,26 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     );
 };
 
+const RawStatusCard = ({ data, isLoading }: { data: any, isLoading: boolean }) => {
+    return (
+        <Card className="col-span-1 lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="text-lg">Raw /status Response</CardTitle>
+                <CardDescription className="text-xs">Unprocessed JSON data from the API for debugging.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <Skeleton className="h-[200px] w-full" />
+                ) : (
+                    <pre className="mt-2 w-full overflow-x-auto rounded-md bg-muted p-4 text-xs">
+                        <code>{JSON.stringify(data, null, 2)}</code>
+                    </pre>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
+
 export function DashboardTab({ modelName, data, isLoading }: { modelName: string, data: TradingData | null, isLoading: boolean }) {
   const hasData = !!data && (data.totalTrades > 0 || data.openTrades.length > 0);
   const pnlValue = data?.pnl ?? 0;
@@ -330,6 +351,9 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
                 isLoading={isLoading}
                 hasData={!!data && data.closedTrades.length > 0}
             />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <RawStatusCard data={data?.rawStatus} isLoading={isLoading} />
         </div>
     </div>
   );
