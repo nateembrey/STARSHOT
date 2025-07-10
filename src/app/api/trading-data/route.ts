@@ -64,20 +64,23 @@ export async function GET(request: Request) {
     const openTrades = Array.isArray(openTradesSource) ? openTradesSource
       .filter((trade: any) => trade.is_open === true)
       .map((trade: any) => ({
+        trade_id: trade.trade_id,
         asset: trade.pair || 'N/A',
         type: trade.ft_order_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
         status: 'Open',
-        profitPercentage: 0,
-        profitAbs: 0,
-        openDate: trade.order_timestamp ? new Date(trade.order_timestamp).toISOString() : new Date().toISOString(),
-        closeDate: null,
-        openRate: trade.safe_price ?? 0,
-        closeRate: 0,
         amount: trade.amount ?? 0,
+        stake_amount: trade.stake_amount ?? 0,
+        leverage: trade.leverage ?? 0,
+        openRate: trade.open_rate ?? 0,
+        currentRate: trade.current_rate ?? 0,
+        profitPercentage: (trade.profit_pct ?? 0) * 100,
+        profitAbs: trade.profit_abs ?? 0,
+        openDate: trade.open_date ? new Date(trade.open_date).toISOString() : new Date().toISOString(),
+        open_timestamp: trade.open_timestamp ?? 0,
+        closeDate: null,
+        closeRate: 0,
     })).sort((a: any, b: any) => {
-        const dateA = a.openDate ? new Date(a.openDate).getTime() : 0;
-        const dateB = b.openDate ? new Date(b.openDate).getTime() : 0;
-        return dateB - dateA;
+        return b.open_timestamp - a.open_timestamp;
     }) : [];
 
     const allTradesSource = tradesApiResponse?.trades;
@@ -142,7 +145,6 @@ export async function GET(request: Request) {
       cumulativeProfitHistory,
       biggestWin,
       percentageProfit,
-      rawStatus: statusApiResponse,
     };
 
     return NextResponse.json(formattedData);
