@@ -15,30 +15,25 @@ export async function GET(request: Request) {
   const {searchParams} = new URL(request.url);
   const model = searchParams.get('model'); // 'chatgpt' or 'gemini'
 
-  // --- CONFIGURATION: You need to update these values ---
+  // --- CONFIGURATION ---
   const loginUrl = 'http://35.228.171.101:8071/'; // Login page
   const dataUrl = 'http://35.228.171.101:8071/dashboard'; // Page with data after login
 
-  // --- SELECTORS: You need to update these with the actual selectors from the website's HTML ---
-  const usernameSelector = '#username-input'; 
-  const passwordSelector = '#password-input'; 
-  const loginButtonSelector = 'button[type="submit"]'; // This is a common selector for login buttons.
+  // --- SELECTORS ---
+  const usernameSelector = '#username-input';
+  const passwordSelector = '#password-input';
+  const loginButtonSelector = 'button[type="submit"]';
 
-  // This is a placeholder for where you would define selectors to find your data.
-  // You will need to inspect the target website's HTML to find the correct selectors.
-  // For example: const totalRevenueSelector = '#total-revenue-widget .value';
+  // These selectors are derived from the HTML you provided.
   const dataSelectors = {
     chatgpt: {
-      totalRevenue: '#chatgpt-total-revenue',
-      pnl: '#chatgpt-pnl',
-      // ... add other selectors for ChatGPT data
-      recentTrades: '#chatgpt-trades-table > tbody > tr', // Example selector for a table
+      summaryTable: '.p-datatable-tbody', // A selector for the summary table body
+      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody', // A selector for the trades table body
     },
     gemini: {
-      totalRevenue: '#gemini-total-revenue',
-      pnl: '#gemini-pnl',
-      // ... add other selectors for Gemini data
-      recentTrades: '#gemini-trades-table > tbody > tr', // Example selector for a table
+       // Assuming Gemini selectors are the same. If not, they need to be updated.
+      summaryTable: '.p-datatable-tbody',
+      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody',
     },
   };
   // --- END CONFIGURATION ---
@@ -63,9 +58,8 @@ export async function GET(request: Request) {
 
   let browser;
   try {
-    // Launch Puppeteer
     browser = await puppeteer.launch({
-      headless: true, // Use `false` for debugging to see the browser UI
+      headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();
@@ -80,46 +74,63 @@ export async function GET(request: Request) {
 
     // Wait for navigation after login and go to the data page
     await page.waitForNavigation({waitUntil: 'networkidle2'});
-    await page.goto(dataUrl, {waitUntil: 'networkidle2'});
+    // The dataUrl is already the correct one after login
+    // await page.goto(dataUrl, {waitUntil: 'networkidle2'});
+    
+    // It can take a moment for the data to load dynamically
+    await page.waitForSelector('.p-datatable-tbody', { timeout: 10000 });
+
 
     // --- DATA EXTRACTION ---
-    // This is a placeholder. You'll need to implement the actual data extraction
-    // logic based on the website's structure and the selectors you defined above.
-    const modelSelectors = dataSelectors[model];
+    const modelSelectors = dataSelectors[model as 'chatgpt' | 'gemini'];
+    
+    // Extract from the summary table
+    const summaryData = await page.$eval(modelSelectors.summaryTable, (tbody) => {
+        const botRow = tbody.querySelector('tr:nth-child(1)');
+        const summaryRow = tbody.querySelector('tr:nth-child(2)');
 
-    // Example of extracting a single text value:
-    const totalRevenue = await page.$eval(modelSelectors.totalRevenue, (el) =>
-      el.textContent?.trim()
-    );
-    const pnl = await page.$eval(modelSelectors.pnl, (el) =>
-      el.textContent?.trim()
-    );
+        const closedProfitEl = summaryRow?.querySelector('td:nth-child(4) > div > div.grow');
+        const pnlText = closedProfitEl?.textContent?.trim().split(' ')[0] ?? 'N/A';
+        const pnl = `${pnlText}`;
 
-    // Example of extracting data from a table:
+        const balanceEl = botRow?.querySelector('td:nth-child(5) > div > span:first-child');
+        const totalRevenue = `$${parseFloat(balanceEl?.textContent?.trim() ?? '0').toLocaleString('en-US')}`;
+
+        const winLossEl = summaryRow?.querySelector('td:nth-child(6)');
+        const wins = parseInt(winLossEl?.querySelector('.text-profit')?.textContent?.trim() ?? '0');
+        const losses = parseInt(winLossEl?.querySelector('.text-loss')?.textContent?.trim() ?? '0');
+        const totalTrades = wins + losses;
+        const winRate = totalTrades > 0 ? `${((wins / totalTrades) * 100).toFixed(1)}%` : '0%';
+
+
+        return { totalRevenue, pnl, trades: `+${totalTrades}`, winRate, pnlPercentage: 'N/A' };
+    });
+
+    // Extract from the recent trades table
     const recentTrades = await page.$$eval(
-      modelSelectors.recentTrades,
+      `${modelSelectors.tradesTable} > tr`, // Select all rows in the trades table body
       (rows) =>
         rows.map((row) => {
           const cells = row.querySelectorAll('td');
+          const profitEl = cells[7]?.querySelector('div.grow');
+          const profitText = profitEl?.textContent?.trim() ?? 'Pending';
+          const isProfit = profitEl?.parentElement?.classList.contains('profit-pill-profit');
+          
           return {
-            asset: cells[0]?.textContent?.trim(),
-            type: cells[1]?.textContent?.trim(),
-            status: cells[2]?.textContent?.trim(),
-            profit: cells[3]?.textContent?.trim(),
+            asset: cells[2]?.textContent?.trim() || 'N/A',
+            type: (cells[1]?.textContent?.trim() || 'N/A').includes('Long') ? 'BUY' : 'SELL',
+            status: 'N/A', // Status is not available in the new HTML structure
+            profit: profitText.includes('%') 
+                ? `${isProfit ? '+' : '-'}${profitText}`
+                : profitText,
           };
-        })
+        }).slice(0, 5) // Limit to 5 trades for the display
     );
     // --- END DATA EXTRACTION ---
 
-    // Return the scraped data
     return NextResponse.json({
-      totalRevenue,
-      pnl,
+      ...summaryData,
       recentTrades,
-      // Add other scraped data here
-      pnlPercentage: 'N/A', // Placeholder
-      trades: 'N/A', // Placeholder
-      winRate: 'N/A', // Placeholder
     });
   } catch (error) {
     console.error('Scraping failed:', error);
