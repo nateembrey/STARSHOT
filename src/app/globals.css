@@ -59,7 +59,7 @@ body {
     --ring: 16 100% 50%;
     --chart-1: 0 0% 98%;
     --chart-2: 158 78% 57%; /* mint green */
-    --chart-3: 217 91% 60%;
+    --chart-3: 217 91% 60%; /* blue */
     --chart-4: 142 76% 36%;
     --chart-5: 48 96% 50%;
   }
@@ -74,5 +74,21 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .perspective {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+  .backface-hidden {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 }

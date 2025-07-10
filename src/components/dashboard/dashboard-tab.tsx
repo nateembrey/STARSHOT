@@ -17,10 +17,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, ArrowUp, ArrowDown } from 'lucide-react';
-import React from 'react';
+import { TrendingUp, Activity, Percent, ChevronsUp, ChevronsDown, ArrowUp, ArrowDown, History } from 'lucide-react';
+import React, { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, isValid } from 'date-fns';
+import { Button } from '@/components/ui/button';
 import {
   Area,
   Bar,
@@ -34,9 +34,12 @@ import {
   Cell,
   ReferenceLine,
   LabelList,
+  ComposedChart,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
+import { predictProfit, type PredictProfitInput, type PredictProfitOutput } from '@/ai/flows/predict-profit-flow';
+
 
 interface Trade {
     asset: string;
@@ -78,6 +81,8 @@ export interface TradingData {
   rawStatusResponse?: any;
 }
 
+type PredictionDuration = '1W' | '1M' | '3M' | '1Y';
+
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
         <Card>
@@ -108,12 +113,6 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
         </Card>
     );
 }
-
-const formatTradeDate = (dateString: string) => {
-    const date = new Date(dateString);
-    if (!isValid(date)) return 'N/A';
-    return format(date, 'yyyy-MM-dd HH:mm:ss');
-};
 
 const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
@@ -194,7 +193,7 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
                 )}
             </div>
         </CardHeader>
-        <CardContent className={cn('p-2 pt-0', !isLoading && 'animate-content-in')}>
+        <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
             {isLoading ? (
                 <Skeleton className="h-[200px] w-full" />
             ) : !hasData || data.length === 0 ? (
@@ -236,42 +235,146 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
 );
 
 const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[], isLoading: boolean, hasData: boolean }) => {
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [isPredicting, setIsPredicting] = useState(false);
+    const [prediction, setPrediction] = useState<PredictProfitOutput['prediction'] | null>(null);
+    const [predictionDuration, setPredictionDuration] = useState<PredictionDuration>('1M');
+    
+    const handlePredict = async (duration: PredictionDuration) => {
+        if (!data || data.length < 2) return;
+        setIsPredicting(true);
+        setPredictionDuration(duration);
+        setPrediction(null); // Clear previous prediction
+        
+        try {
+            const historyForPrediction = data
+                .filter(d => d.date) // Ensure there's a date
+                .map(d => ({
+                    date: new Date(d.date).toISOString().split('T')[0], // format as yyyy-MM-dd
+                    cumulativeProfit: d.cumulativeProfit || 0,
+                }));
+
+            const result = await predictProfit({ history: historyForPrediction, duration });
+            setPrediction(result.prediction);
+        } catch (error) {
+            console.error("Prediction failed:", error);
+            // Optionally, show a toast notification here
+        } finally {
+            setIsPredicting(false);
+        }
+    };
+    
+    const handleFlip = () => {
+        setIsFlipped(prev => !prev);
+        if (!isFlipped && !prediction) {
+            // If flipping to back for the first time, run default prediction
+            handlePredict(predictionDuration);
+        }
+    };
+
+    const lastHistoricalPoint = data.length > 0 ? data[data.length - 1] : null;
+
+    const combinedChartData = isFlipped && prediction && lastHistoricalPoint ? [
+        ...data.map(d => ({ ...d, predictedProfit: null })),
+        ...prediction.map(p => ({
+            name: p.name,
+            date: p.date,
+            cumulativeProfit: null, // Historical line stops
+            predictedProfit: p.predictedProfit,
+        }))
+    ] : data;
+
     const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
     const isPositive = finalProfit >= 0;
-
     const mainColor = isPositive ? "hsl(var(--chart-2))" : "hsl(var(--accent))";
     const gradientId = isPositive ? "gradient-green" : "gradient-red";
     
     return (
-        <Card>
-            <CardHeader className="p-8">
-                <CardTitle className="text-xl">Cumulative Profit</CardTitle>
-                <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
-            </CardHeader>
-            <CardContent className={cn('p-2 pt-0', !isLoading && 'animate-content-in')}>
-                {isLoading ? (
-                    <Skeleton className="h-[200px] w-full" />
-                ) : !hasData || data.length === 0 ? (
-                    <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">No chart data.</div>
-                ) : (
-                    <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit' } }} className="h-[200px] w-full">
-                        <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} allowDataOverflow={true}>
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                            <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
-                            <defs>
-                                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={mainColor} stopOpacity={0.4}/>
-                                    <stop offset="95%" stopColor={mainColor} stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                            <Area type="monotone" dataKey="cumulativeProfit" stroke={mainColor} fill={`url(#${gradientId})`} strokeWidth={2} />
-                        </AreaChart>
-                    </ChartContainer>
-                )}
-            </CardContent>
+        <Card className="perspective">
+            <div className={cn("relative w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
+                {/* Front Face */}
+                <div className="w-full h-full backface-hidden">
+                    <CardHeader className="p-8 flex flex-row items-start justify-between">
+                       <div>
+                            <CardTitle className="text-xl">Cumulative Profit</CardTitle>
+                            <CardDescription className="text-xs">Growth of total profit over time.</CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleFlip} disabled={isLoading || !hasData}>
+                            <History className="mr-2 h-4 w-4" />
+                            PREDICT
+                        </Button>
+                    </CardHeader>
+                    <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
+                        {isLoading ? (
+                            <Skeleton className="h-[200px] w-full" />
+                        ) : !hasData || data.length < 2 ? (
+                            <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">No chart data.</div>
+                        ) : (
+                            <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit' } }} className="h-[200px] w-full">
+                                <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                                    <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
+                                    <defs>
+                                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={mainColor} stopOpacity={0.4}/>
+                                            <stop offset="95%" stopColor={mainColor} stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                                    <Area type="monotone" dataKey="cumulativeProfit" stroke={mainColor} fill={`url(#${gradientId})`} strokeWidth={2} />
+                                </AreaChart>
+                            </ChartContainer>
+                        )}
+                    </CardContent>
+                </div>
+                
+                {/* Back Face */}
+                <div className="absolute top-0 left-0 w-full h-full backface-hidden rotate-y-180">
+                     <CardHeader className="p-8 flex flex-row items-start justify-between">
+                       <div>
+                            <CardTitle className="text-xl">Profit Forecast</CardTitle>
+                            <CardDescription className="text-xs">AI-powered prediction based on historical data.</CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleFlip}>
+                           <History className="mr-2 h-4 w-4" />
+                            BACK
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0">
+                         <div className="flex items-center justify-center space-x-2 mb-4">
+                            {(['1W', '1M', '3M', '1Y'] as PredictionDuration[]).map(d => (
+                                <Button key={d} size="sm" variant={predictionDuration === d ? 'secondary' : 'ghost'} onClick={() => handlePredict(d)} disabled={isPredicting}>
+                                    {isPredicting && predictionDuration === d ? '...' : d}
+                                </Button>
+                            ))}
+                        </div>
+                        {isPredicting ? (
+                             <Skeleton className="h-[168px] w-full" />
+                        ) : !prediction ? (
+                            <div className="flex items-center justify-center h-[168px] text-muted-foreground text-sm">Select a duration to generate a prediction.</div>
+                        ) : (
+                            <ChartContainer config={{ cumulativeProfit: { label: 'History', color: 'hsl(var(--chart-2))' }, predictedProfit: { label: 'Prediction', color: 'hsl(var(--chart-3))' } }} className="h-[168px] w-full">
+                               <ComposedChart accessibilityLayer data={combinedChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} domain={['dataMin', 'dataMax']}/>
+                                    <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
+                                    <defs>
+                                        <linearGradient id="gradient-blue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.4}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-2))" fill="transparent" strokeWidth={2} name="History" />
+                                    <Area type="monotone" dataKey="predictedProfit" stroke="hsl(var(--chart-3))" strokeDasharray="4 4" fill="url(#gradient-blue)" strokeWidth={2} name="Prediction" />
+                                </ComposedChart>
+                            </ChartContainer>
+                        )}
+                    </CardContent>
+                </div>
+            </div>
         </Card>
     );
 };
@@ -328,7 +431,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <CardHeader className="p-8">
                 <CardTitle className="text-xl">Open Trades</CardTitle>
             </CardHeader>
-            <CardContent className={cn('p-8', !isLoading && 'animate-content-in')}>
+            <CardContent className={cn('p-8 pt-0', !isLoading && 'animate-content-in')}>
               {isLoading ? (
                   <Skeleton className="h-40 w-full" />
               ) : openTradesFromStatus.length > 0 ? (
