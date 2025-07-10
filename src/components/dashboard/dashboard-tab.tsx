@@ -39,6 +39,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 import { predictProfit, type PredictProfitInput, type PredictProfitOutput } from '@/ai/flows/predict-profit-flow';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface Trade {
@@ -240,6 +241,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const [prediction, setPrediction] = useState<PredictProfitOutput['prediction'] | null>(null);
     const [predictionDuration, setPredictionDuration] = useState<PredictionDuration>('1M');
     const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
+    const { toast } = useToast();
     
     const handlePredict = async (duration: PredictionDuration) => {
         if (!data) return;
@@ -250,14 +252,18 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         
         try {
             const historyForPrediction = data
-                .filter(d => d.name !== 'Start')
+                .filter(d => d.name !== 'Start' && d.date)
                 .map(d => ({
                     date: new Date(d.date).toISOString().split('T')[0],
                     cumulativeProfit: d.cumulativeProfit || 0,
                 }));
 
-            if (historyForPrediction.length === 0) {
-                console.error("Not enough valid historical data to make a prediction.");
+            if (historyForPrediction.length < 2) {
+                toast({
+                    variant: "destructive",
+                    title: "Prediction Error",
+                    description: "At least 2 closed trades are required to make a prediction.",
+                });
                 setIsPredicting(false);
                 return;
             }
@@ -279,6 +285,11 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
 
         } catch (error) {
             console.error("Prediction failed:", error);
+            toast({
+                variant: "destructive",
+                title: "Prediction Failed",
+                description: "An unexpected error occurred while generating the forecast.",
+            });
         } finally {
             setIsPredicting(false);
         }
@@ -292,7 +303,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     };
 
     const combinedChartData = isFlipped && prediction ? [
-        ...data.map(d => ({ ...d, predictedProfit: null, date: new Date(d.date).toISOString().split('T')[0] })),
+        ...data.map(d => ({ ...d, predictedProfit: null, date: d.date ? new Date(d.date).toISOString().split('T')[0] : "" })),
         ...prediction.map(p => ({
             name: p.name,
             date: p.date,
@@ -306,6 +317,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const isPositive = finalProfit >= 0;
     const mainColor = isPositive ? "hsl(var(--chart-2))" : "hsl(var(--accent))";
     const gradientId = isPositive ? "gradient-green" : "gradient-red";
+    const canPredict = hasData && data.filter(d => d.name !== 'Start').length >= 2;
     
     return (
         <div className="relative perspective h-[420px] md:h-[364px]">
@@ -367,7 +379,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                     <CardContent className="p-6 pt-0 md:p-8 md:pt-0">
                          <div className="flex items-center justify-center space-x-2 mb-4">
                             {(['1W', '1M', '3M', '1Y'] as PredictionDuration[]).map(d => (
-                                <Button key={d} size="sm" variant={predictionDuration === d ? 'secondary' : 'ghost'} onClick={() => handlePredict(d)} disabled={isPredicting}>
+                                <Button key={d} size="sm" variant={predictionDuration === d ? 'secondary' : 'ghost'} onClick={() => handlePredict(d)} disabled={isPredicting || !canPredict}>
                                     {isPredicting && predictionDuration === d ? '...' : d}
                                 </Button>
                             ))}
@@ -375,7 +387,9 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                         {isPredicting ? (
                              <Skeleton className="h-[168px] w-full" />
                         ) : !prediction ? (
-                            <div className="flex items-center justify-center h-[168px] text-muted-foreground text-sm">Select a duration to generate a prediction.</div>
+                            <div className="flex items-center justify-center h-[168px] text-muted-foreground text-sm text-center px-4">
+                                {canPredict ? "Select a duration to generate a forecast." : "At least 2 closed trades are required to generate a forecast."}
+                            </div>
                         ) : (
                             <ChartContainer config={{ cumulativeProfit: { label: 'History', color: 'hsl(var(--chart-2))' }, predictedProfit: { label: 'Prediction', color: 'hsl(var(--chart-3))' } }} className="h-[168px] w-full">
                                <ComposedChart accessibilityLayer data={combinedChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
