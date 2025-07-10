@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import {
@@ -61,6 +60,7 @@ export interface TradingData {
   pnl: number;
   totalTrades: number;
   winRate: number;
+
   winningTrades: number;
   losingTrades: number;
   openTrades: Trade[];
@@ -186,6 +186,7 @@ const ProfitLossChart = ({ data, isLoading, hasData }: { data: ChartData[], isLo
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                         <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
                         <Bar 
                           dataKey="profit" 
                           radius={2}
@@ -221,10 +222,10 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                     <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">No chart data.</div>
                 ) : (
                     <ChartContainer config={{ cumulativeProfit: { label: 'Cumulative Profit' } }} className="h-[200px] w-full">
-                        <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                        <AreaChart accessibilityLayer data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} allowDataOverflow={true}>
                             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} domain={['dataMin', 'dataMax']} tickFormatter={(value) => `$${value}`} />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                             <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
                             <defs>
                                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
