@@ -30,12 +30,11 @@ async function apiFetch(url: string, headers: HeadersInit) {
       console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
-    // Add a try-catch for JSON parsing as well
     try {
         return await response.json();
     } catch (e: any) {
         console.error(`Failed to parse JSON from ${url}:`, e.message);
-        return null; // Return null if JSON parsing fails
+        return null; 
     }
   } catch (e: any) {
     console.error(`Failed to fetch from ${url}:`, e.message);
@@ -61,7 +60,6 @@ export async function GET(request: Request) {
         apiFetch(`${config.baseUrl}/status`, headers)
     ]);
     
-    // Process OPEN trades from /status endpoint
     const openTradesSource = statusApiResponse?.trades;
     const openTrades = Array.isArray(openTradesSource) ? openTradesSource.map((trade: any) => ({
       asset: trade.pair || 'N/A',
@@ -80,7 +78,6 @@ export async function GET(request: Request) {
         return dateB - dateA;
     }) : [];
 
-    // Process CLOSED trades from /trades endpoint
     const allTradesSource = tradesApiResponse?.trades;
     const closedTrades = Array.isArray(allTradesSource) ? allTradesSource
       .filter((trade: any) => trade.close_date_ts !== null)
@@ -102,7 +99,6 @@ export async function GET(request: Request) {
           return dateB - dateA;
       }) : [];
 
-    // Calculations based only on the reliable closedTrades list
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
     const losingTrades = totalTrades - winningTrades;
@@ -119,10 +115,15 @@ export async function GET(request: Request) {
         }));
     
     let cumulativeProfit = 0;
-    const cumulativeProfitHistory = tradeHistoryForCharts.map((trade: any) => {
+    const cumulativeProfitHistoryWithTrades = tradeHistoryForCharts.map((trade: any) => {
         cumulativeProfit += trade.profit;
         return { ...trade, cumulativeProfit };
     });
+    
+    const cumulativeProfitHistory = [
+      { name: 'Start', date: '', profit: 0, cumulativeProfit: 0 },
+      ...cumulativeProfitHistoryWithTrades
+    ];
 
     const formattedData = {
       pnl,
