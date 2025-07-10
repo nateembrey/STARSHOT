@@ -30,9 +30,15 @@ async function apiFetch(url: string, headers: HeadersInit) {
       console.error(`API request to ${url} failed with status ${response.status}: ${errorBody}`);
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
-    return response.json();
+    // Add a try-catch for JSON parsing as well
+    try {
+        return await response.json();
+    } catch (e: any) {
+        console.error(`Failed to parse JSON from ${url}:`, e.message);
+        return null; // Return null if JSON parsing fails
+    }
   } catch (e: any) {
-    console.error(`Failed to fetch or parse JSON from ${url}:`, e.message);
+    console.error(`Failed to fetch from ${url}:`, e.message);
     return null; 
   }
 }

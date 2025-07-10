@@ -243,7 +243,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
 };
 
 export function DashboardTab({ modelName, data, isLoading }: { modelName: string, data: TradingData | null, isLoading: boolean }) {
-  const hasData = !!data && data.totalTrades > 0;
+  const hasData = !!data && (data.totalTrades > 0 || data.openTrades.length > 0);
   const pnlValue = data?.pnl ?? 0;
   const pnlColor = pnlValue >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
   const winsLossesIcon = (data?.winningTrades ?? 0) >= (data?.losingTrades ?? 0) ? ChevronsUp : ChevronsDown;
@@ -251,15 +251,15 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   return (
     <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
-            <StatCard isLoading={isLoading} hasData={hasData} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins / Losses" value={`${data?.winningTrades ?? 0} / ${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProfitLossChart data={data?.tradeHistoryForCharts ?? []} isLoading={isLoading} hasData={hasData && (data?.tradeHistoryForCharts?.length ?? 0) > 0} />
-            <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={hasData && (data?.cumulativeProfitHistory?.length ?? 0) > 0} />
+            <ProfitLossChart data={data?.tradeHistoryForCharts ?? []} isLoading={isLoading} hasData={!!data && (data?.tradeHistoryForCharts?.length ?? 0) > 0} />
+            <CumulativeProfitChart data={data?.cumulativeProfitHistory ?? []} isLoading={isLoading} hasData={!!data && (data?.cumulativeProfitHistory?.length ?? 0) > 0} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -268,14 +268,14 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
                 description="Trades that are currently active."
                 trades={data?.openTrades ?? []}
                 isLoading={isLoading}
-                hasData={!!data}
+                hasData={!!data && data.openTrades.length > 0}
             />
             <TradesTable 
                 title="Recent Closed Trades"
                 description="A history of all closed trades."
                 trades={(data?.closedTrades ?? []).slice(0, 20)}
                 isLoading={isLoading}
-                hasData={hasData}
+                hasData={!!data && data.closedTrades.length > 0}
             />
         </div>
     </div>
