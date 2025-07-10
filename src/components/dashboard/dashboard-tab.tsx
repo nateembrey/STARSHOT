@@ -87,7 +87,7 @@ type PredictionDuration = '1W' | '1M' | '3M' | '1Y';
 
 const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtext?: string, isLoading: boolean, hasData: boolean }) => {
     return (
-        <Card>
+        <Card className="card-interactive">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-6 md:p-8">
                 <CardTitle className="text-lg md:text-xl">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
@@ -118,7 +118,7 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
 
 const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: { trades: Trade[], title: string, description: string, isLoading: boolean, hasData: boolean }) => {
     return (
-        <Card>
+        <Card className="card-interactive">
             <CardHeader className="p-6 md:p-8">
                 <CardTitle className="text-lg md:text-xl">{title}</CardTitle>
                 <CardDescription className="text-xs">{description}</CardDescription>
@@ -139,8 +139,6 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                 <TableRow>
                                     <TableHead className="text-xs">Asset</TableHead>
                                     <TableHead className="text-xs">Type</TableHead>
-                                    <TableHead className="text-xs">Open Rate</TableHead>
-                                    <TableHead className="text-xs">Close Rate</TableHead>
                                     <TableHead className="text-right text-xs">Profit %</TableHead>
                                     <TableHead className="text-right text-xs">Profit</TableHead>
                                 </TableRow>
@@ -156,10 +154,6 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                                 <Badge variant={trade.type === 'BUY' ? 'secondary' : 'default'} className="text-xs">
                                                     {trade.type}
                                                 </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-xs">{trade.openRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                                            <TableCell className="whitespace-nowrap text-xs">
-                                                {trade.closeRate ? trade.closeRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A'}
                                             </TableCell>
                                             <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
                                                 {trade.profitPercentage?.toFixed(1)}%
@@ -182,7 +176,7 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
 }
 
 const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: ChartData[], isLoading: boolean, hasData: boolean, biggestWin: number }) => (
-    <Card>
+    <Card className="card-interactive">
         <CardHeader className="p-6 md:p-8">
             <div className="flex justify-between items-start">
                 <div>
@@ -341,7 +335,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
         <div className="relative perspective h-[420px] md:h-[364px]">
             <div className={cn("w-full h-full transform-style-3d transition-transform duration-700", isFlipped && "rotate-y-180")}>
                 {/* Front Face */}
-                <Card className="absolute w-full h-full backface-hidden">
+                <Card className="absolute w-full h-full backface-hidden card-interactive">
                     <CardHeader className="p-6 md:p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-lg md:text-xl">Cumulative Profit</CardTitle>
@@ -393,7 +387,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                 </Card>
                 
                 {/* Back Face */}
-                <Card className="absolute w-full h-full backface-hidden rotate-y-180">
+                <Card className="absolute w-full h-full backface-hidden rotate-y-180 card-interactive">
                      <CardHeader className="p-6 md:p-8 flex flex-row items-start justify-between">
                        <div>
                             <CardTitle className="text-lg md:text-xl">Profit Forecast</CardTitle>
@@ -461,7 +455,9 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   const percentageProfitColor = percentageProfitValue >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
   const winRatePercentage = (data?.winRate ?? 0) * 100;
   const formattedWinRate = winRatePercentage % 1 === 0 ? winRatePercentage.toFixed(0) : winRatePercentage.toFixed(1);
-
+  const wins = data?.winningTrades ?? 0;
+  const losses = data?.losingTrades ?? 0;
+  const winsLossesColor = wins >= losses ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
 
   const formatPnl = (value: number) => {
     const absValue = Math.abs(value);
@@ -489,7 +485,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="% Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${formattedWinRate}%`} icon={Percent} subtext="Percentage of profitable trades."/>
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins/Losses" value={`${data?.winningTrades ?? 0}/${data?.losingTrades ?? 0}`} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Wins/Losses" value={<span><span className={winsLossesColor}>{wins}</span><span className={cn("text-muted-foreground mx-1", winsLossesColor)}>/</span><span className={winsLossesColor}>{losses}</span></span>} icon={winsLossesIcon} subtext="Profitable vs. unprofitable trades." />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -503,7 +499,7 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
+            <Card className="card-interactive">
                 <CardHeader className="p-6 md:p-8">
                     <CardTitle className="text-lg md:text-xl">Open Trades</CardTitle>
                 </CardHeader>
