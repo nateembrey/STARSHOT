@@ -123,7 +123,7 @@ export default function DashboardPage() {
       <div className="flex-col md:flex bg-background min-h-screen">
         <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
           <div className="flex h-16 items-center px-4 md:px-16">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-[hsl(var(--chart-2))]">
                   <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/>
                   <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
                   <span className="hidden md:inline">STARSHOT</span>
                 </h1>
             </div>
-            <div className="flex-1 flex justify-center">
+            <div className="flex justify-center">
               <TabsList className="grid w-full grid-cols-2 max-w-[200px] sm:max-w-[240px] rounded-full">
                 <TabsTrigger value="chatgpt" className="rounded-full">
                   CHATGPT
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                 </TabsTrigger>
               </TabsList>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-1 items-center justify-end space-x-2">
               <Notifications count={newTradesCount} onClear={handleClearNotifications} />
               <UserNav />
             </div>
