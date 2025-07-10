@@ -17,18 +17,17 @@ export async function GET(request: Request) {
 
   // --- CONFIGURATION ---
   const loginUrl = 'http://35.228.171.101:8071/'; // Login page
-  const dataUrl = 'http://35.228.171.101:8071/dashboard'; // Page with data after login
-
+  
   // --- SELECTORS ---
   const usernameSelector = '#username-input';
   const passwordSelector = '#password-input';
   const loginButtonSelector = 'button[type="submit"]';
 
-  // These selectors are derived from the HTML you provided.
+  // These selectors are derived from the HTML provided.
   const dataSelectors = {
     chatgpt: {
-      summaryTable: '.p-datatable-tbody', // A selector for the summary table body
-      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody', // A selector for the trades table body
+      summaryTable: '.p-datatable-tbody', // Selector for the summary table body
+      tradesTable: '.p-datatable-scrollable-table .p-datatable-tbody', // Selector for the trades table body
     },
     gemini: {
        // Assuming Gemini selectors are the same. If not, they need to be updated.
@@ -72,13 +71,10 @@ export async function GET(request: Request) {
     await page.type(passwordSelector, password);
     await page.click(loginButtonSelector);
 
-    // Wait for navigation after login and go to the data page
+    // Wait for navigation after login and for the data to be present
     await page.waitForNavigation({waitUntil: 'networkidle2'});
-    // The dataUrl is already the correct one after login
-    // await page.goto(dataUrl, {waitUntil: 'networkidle2'});
-    
-    // It can take a moment for the data to load dynamically
-    await page.waitForSelector('.p-datatable-tbody', { timeout: 10000 });
+    // This is a crucial step: wait for a specific element that appears only when data is loaded.
+    await page.waitForSelector('.p-datatable-tbody', { timeout: 15000 });
 
 
     // --- DATA EXTRACTION ---
@@ -91,19 +87,20 @@ export async function GET(request: Request) {
 
         const closedProfitEl = summaryRow?.querySelector('td:nth-child(4) > div > div.grow');
         const pnlText = closedProfitEl?.textContent?.trim().split(' ')[0] ?? 'N/A';
-        const pnl = `${pnlText}`;
+        const pnl = `+${pnlText}`;
 
         const balanceEl = botRow?.querySelector('td:nth-child(5) > div > span:first-child');
-        const totalRevenue = `$${parseFloat(balanceEl?.textContent?.trim() ?? '0').toLocaleString('en-US')}`;
+        const balanceValue = parseFloat(balanceEl?.textContent?.trim().replace(/,/g, '') ?? '0');
+        const totalRevenue = `$${balanceValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
         const winLossEl = summaryRow?.querySelector('td:nth-child(6)');
-        const wins = parseInt(winLossEl?.querySelector('.text-profit')?.textContent?.trim() ?? '0');
-        const losses = parseInt(winLossEl?.querySelector('.text-loss')?.textContent?.trim() ?? '0');
+        const wins = parseInt(winLossEl?.querySelector('.text-profit')?.textContent?.trim() ?? '0', 10);
+        const losses = parseInt(winLossEl?.querySelector('.text-loss')?.textContent?.trim() ?? '0', 10);
         const totalTrades = wins + losses;
         const winRate = totalTrades > 0 ? `${((wins / totalTrades) * 100).toFixed(1)}%` : '0%';
 
 
-        return { totalRevenue, pnl, trades: `+${totalTrades}`, winRate, pnlPercentage: 'N/A' };
+        return { totalRevenue, pnl, trades: `${totalTrades}`, winRate, pnlPercentage: 'N/A' }; // pnlPercentage not available
     });
 
     // Extract from the recent trades table
@@ -114,12 +111,12 @@ export async function GET(request: Request) {
           const cells = row.querySelectorAll('td');
           const profitEl = cells[7]?.querySelector('div.grow');
           const profitText = profitEl?.textContent?.trim() ?? 'Pending';
-          const isProfit = profitEl?.parentElement?.classList.contains('profit-pill-profit');
+          const isProfit = profitEl?.classList.contains('profit-pill-profit');
           
           return {
             asset: cells[2]?.textContent?.trim() || 'N/A',
             type: (cells[1]?.textContent?.trim() || 'N/A').includes('Long') ? 'BUY' : 'SELL',
-            status: 'N/A', // Status is not available in the new HTML structure
+            status: 'Closed', // Status is not available in the trades table, assuming 'Closed'
             profit: profitText.includes('%') 
                 ? `${isProfit ? '+' : '-'}${profitText}`
                 : profitText,
