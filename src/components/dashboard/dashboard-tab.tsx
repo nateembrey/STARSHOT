@@ -139,8 +139,8 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                 <TableRow>
                                     <TableHead className="text-xs">Asset</TableHead>
                                     <TableHead className="text-xs">Type</TableHead>
-                                    <TableHead className="text-right text-xs">Profit %</TableHead>
                                     <TableHead className="text-right text-xs">Profit</TableHead>
+                                    <TableHead className="text-right text-xs">Profit %</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -156,12 +156,12 @@ const ClosedTradesTable = ({ trades, title, description, isLoading, hasData }: {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
-                                                {trade.profitPercentage?.toFixed(1)}%
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
                                                 <span className={colorClass}>
                                                     {trade.profitAbs?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                                                 </span>
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold whitespace-nowrap text-xs">
+                                                {trade.profitPercentage?.toFixed(1)}%
                                             </TableCell>
                                         </TableRow>
                                     )
@@ -258,9 +258,9 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     const handlePredict = async (duration: PredictionDuration) => {
         if (!data) return;
         setIsPredicting(true);
-        setPredictionDuration(duration);
         setPrediction(null);
         setConfidenceScore(null);
+        setPredictionDuration(duration);
         
         try {
             const historyForPrediction = data

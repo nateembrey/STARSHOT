@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,10 +93,11 @@ body {
     backface-visibility: hidden;
   }
   .card-interactive {
-      @apply shadow-lg border-2 border-transparent transition-all duration-300;
+      @apply relative shadow-lg border-2 border-border transition-all duration-300;
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
   }
   .card-interactive:hover {
+      z-index: 10;
       border-color: hsl(var(--border) / 0.5);
       box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
   }
