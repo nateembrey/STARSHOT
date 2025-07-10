@@ -69,11 +69,12 @@ export async function GET(request: Request) {
     await page.goto(loginUrl, {waitUntil: 'networkidle2'});
     await page.type(usernameSelector, username);
     await page.type(passwordSelector, password);
+    
+    // Click the login button and wait for the dashboard to appear
     await page.click(loginButtonSelector);
-
-    // Wait for navigation after login and for the data to be present
-    await page.waitForNavigation({waitUntil: 'networkidle2'});
+    
     // This is a crucial step: wait for a specific element that appears only when data is loaded.
+    // This confirms a successful login and that the page is ready.
     await page.waitForSelector('.p-datatable-tbody', { timeout: 15000 });
 
 
@@ -131,6 +132,11 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Scraping failed:', error);
+    // This part of the message is helpful for debugging in your server logs.
+    // You can check your terminal for the full error message.
+    if (error instanceof Error && error.name === 'TimeoutError') {
+       console.error('TimeoutError: The page timed out after login. This could mean the login failed, or the dashboard page is slow to load.');
+    }
     return NextResponse.json(
       {error: 'Failed to scrape data.'},
       {status: 500}
