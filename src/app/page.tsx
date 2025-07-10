@@ -2,7 +2,7 @@
 'use client';
 
 import { UserNav } from '@/components/dashboard/user-nav';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardTab, type TradingData } from '@/components/dashboard/dashboard-tab';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -151,7 +151,7 @@ export default function DashboardPage() {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex-col md:flex bg-background min-h-screen">
-        <header className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-xl">
+        <header className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-md">
           <div className="flex h-20 items-center px-4 md:px-16">
             <div className="flex flex-1 items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 md:h-6 md:w-6 text-[hsl(var(--chart-2))]">
@@ -186,12 +186,12 @@ export default function DashboardPage() {
                         activeTab === 'gemini' ? '-translate-x-1/2' : 'translate-x-0'
                     )}
                 >
-                    <TabsContent value="chatgpt" className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
+                    <div className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
                         <DashboardTab modelName="ChatGPT" data={chatGptData} isLoading={isLoading} />
-                    </TabsContent>
-                    <TabsContent value="gemini" className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
+                    </div>
+                    <div className="w-1/2 flex-shrink-0 space-y-4 p-8 pt-6 md:p-16">
                         <DashboardTab modelName="Gemini" data={geminiData} isLoading={isLoading} />
-                    </TabsContent>
+                    </div>
                 </div>
             </main>
         </div>
