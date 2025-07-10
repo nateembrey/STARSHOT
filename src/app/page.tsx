@@ -121,7 +121,7 @@ export default function DashboardPage() {
   return (
     <Tabs defaultValue="chatgpt" onValueChange={setActiveTab}>
       <div className="flex-col md:flex bg-background min-h-screen">
-        <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+        <header className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-md">
           <div className="flex h-16 items-center px-4 md:px-16">
             <div className="flex flex-1 items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 md:h-6 md:w-6 text-[hsl(var(--chart-2))]">
