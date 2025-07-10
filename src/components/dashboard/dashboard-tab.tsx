@@ -64,11 +64,9 @@ interface ChartData {
 }
 
 interface TradingData {
-  totalBalance: number;
   pnl: number;
   totalTrades: number;
   winRate: number;
-  profitRatio: number;
   winningTrades: number;
   losingTrades: number;
   openTrades: Trade[];
@@ -290,10 +288,9 @@ export function DashboardTab({ modelName }: { modelName: string }) {
   return (
     <div className="space-y-4">
         {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard isLoading={isLoading} hasData={hasData && (data?.totalBalance ?? 0) > 0} title="Total Balance" value={data?.totalBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) ?? 'N/A'} icon={DollarSign} subtext="Initial capital + P&L" />
-            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext={`${((data?.profitRatio ?? 0) * 100).toFixed(2)}% of balance`} />
-            <StatCard isLoading={isLoading} hasData={hasData && (data?.totalTrades ?? 0) > 0} title="Total Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Number of closed trades" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StatCard isLoading={isLoading} hasData={hasData} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Net profit from all closed trades" />
+            <StatCard isLoading={isLoading} hasData={hasData && (data?.totalTrades ?? 0) > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total number of completed trades" />
             <StatCard isLoading={isLoading} hasData={hasData && (data?.totalTrades ?? 0) > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext={`${data?.winningTrades ?? 0} Wins / ${data?.losingTrades ?? 0} Losses`} />
         </div>
         

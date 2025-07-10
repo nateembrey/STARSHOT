@@ -74,19 +74,6 @@ export async function GET(request: Request) {
 
 
     // --- DATA TRANSFORMATION (ROBUST) ---
-    const botStatus = (Array.isArray(statusData?.bots?.status) && statusData.bots.status[0]) || {};
-    
-    const totalProfit = botStatus?.total_profit ?? 0;
-    const startingBalance = botStatus?.starting_balance ?? 0;
-    const totalBalance = (startingBalance + totalProfit);
-    
-    const totalTrades = botStatus?.trade_count ?? 0;
-    const winningTrades = botStatus?.wins ?? 0;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
-    
-    const pnl = totalProfit;
-    const profitRatio = botStatus?.profit_ratio ?? 0;
-
     const allTrades = (tradesData?.trades ?? []).map((trade: any) => ({
         asset: trade.pair || 'N/A',
         type: trade.is_short ? 'SELL' : 'BUY',
@@ -105,6 +92,13 @@ export async function GET(request: Request) {
 
     const closedTrades = allTrades.filter((t: any) => t.status === 'Closed')
         .sort((a: any, b: any) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
+
+    // --- CALCULATE STATS FROM TRADES ---
+    const totalTrades = closedTrades.length;
+    const winningTrades = closedTrades.filter(t => (t.profitAbs ?? 0) > 0).length;
+    const losingTrades = totalTrades - winningTrades;
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) : 0;
+    const pnl = closedTrades.reduce((acc: number, trade: any) => acc + (trade.profitAbs ?? 0), 0);
     
     // Data for charts
     const tradeHistoryForCharts = closedTrades
@@ -123,14 +117,12 @@ export async function GET(request: Request) {
     });
 
     const formattedData = {
-      // Summary Stats
-      totalBalance,
+      // Summary Stats (Calculated)
       pnl,
       totalTrades,
       winRate,
-      profitRatio,
       winningTrades,
-      losingTrades: totalTrades - winningTrades,
+      losingTrades,
       
       // Trade Lists
       openTrades,
