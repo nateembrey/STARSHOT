@@ -205,7 +205,20 @@ const ProfitLossChart = ({ data, isLoading, hasData, biggestWin }: { data: Chart
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                        <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                        <ChartTooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent formatter={(value, name, props) => {
+                            if (typeof value === 'number' && props.payload) {
+                                return (
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-bold">{props.payload.name}</span>
+                                    <span className="text-muted-foreground">{new Date(props.payload.date).toLocaleDateString()}</span>
+                                    <span className={value >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]'}>
+                                        Profit: {value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                    </span>
+                                </div>
+                                )
+                            }
+                            return null;
+                        }} />} />
                         <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
                         <Bar dataKey="profit" radius={2}>
                           <LabelList
@@ -254,7 +267,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
             const historyForPrediction = data
                 .filter(d => d.name !== 'Start' && d.date)
                 .map(d => ({
-                    date: new Date(d.date).toISOString().split('T')[0],
+                    date: d.date.split('T')[0],
                     cumulativeProfit: d.cumulativeProfit || 0,
                 }));
 
@@ -275,7 +288,7 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
             if (lastHistoricalPoint) {
                 const bridgePoint = {
                     name: lastHistoricalPoint.name,
-                    date: new Date(lastHistoricalPoint.date).toISOString().split('T')[0],
+                    date: lastHistoricalPoint.date.split('T')[0],
                     predictedProfit: lastHistoricalPoint.cumulativeProfit || 0,
                 };
                  setPrediction([bridgePoint, ...result.prediction]);
@@ -303,14 +316,14 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
     };
 
     const combinedChartData = isFlipped && prediction ? [
-        ...data.map(d => ({ ...d, predictedProfit: null, date: d.date ? new Date(d.date).toISOString().split('T')[0] : "" })),
+        ...data.map(d => ({ ...d, predictedProfit: null, date: d.date ? d.date.split('T')[0] : "" })),
         ...prediction.map(p => ({
             name: p.name,
             date: p.date,
             cumulativeProfit: null, 
             predictedProfit: p.predictedProfit,
         }))
-    ] : data.map(d => ({ ...d, predictedProfit: null, date: d.date ? new Date(d.date).toISOString().split('T')[0] : "" }));
+    ] : data.map(d => ({ ...d, predictedProfit: null, date: d.date ? d.date.split('T')[0] : "" }));
 
 
     const finalProfit = data.length > 0 ? data[data.length - 1].cumulativeProfit ?? 0 : 0;
@@ -345,7 +358,21 @@ const CumulativeProfitChart = ({ data, isLoading, hasData }: { data: ChartData[]
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                    <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent />} />
+                                    <ChartTooltip cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1 }} content={<ChartTooltipContent formatter={(value, name, props) => {
+                                        if (typeof value === 'number' && props.payload) {
+                                            const payload = props.payload as any;
+                                            return (
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-bold">{payload.name}</span>
+                                                    <span className="text-muted-foreground">{new Date(payload.date).toLocaleDateString()}</span>
+                                                    <span className={payload.cumulativeProfit >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]'}>
+                                                        {payload.cumulativeProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                                    </span>
+                                                </div>
+                                            )
+                                        }
+                                        return null;
+                                    }}/>} />
                                     <defs>
                                         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor={mainColor} stopOpacity={0.4}/>

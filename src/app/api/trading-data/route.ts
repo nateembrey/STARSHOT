@@ -119,22 +119,25 @@ export async function GET(request: Request) {
 
     const tradeHistoryForCharts = chronoSortedTrades.map((trade: any, index: number) => ({
         name: `Trade ${index + 1}`,
-        date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
+        date: trade.closeDate,
         profit: trade.profitAbs ?? 0,
     }));
     
     let cumulativeProfit = 0;
+    const cumulativeProfitHistoryRaw = chronoSortedTrades.map((trade: any, index: number) => {
+        cumulativeProfit += trade.profitAbs ?? 0;
+        return {
+            name: `Trade ${index + 1}`,
+            date: trade.closeDate,
+            profit: trade.profitAbs ?? 0,
+            cumulativeProfit: cumulativeProfit
+        };
+    });
+
+    const firstTradeDate = chronoSortedTrades[0]?.openDate;
     const cumulativeProfitHistory = [
-      { name: 'Start', date: '', profit: 0, cumulativeProfit: 0 },
-      ...chronoSortedTrades.map((trade: any, index: number) => {
-          cumulativeProfit += trade.profitAbs ?? 0;
-          return {
-              name: `Trade ${index + 1}`,
-              date: trade.closeDate ? new Date(trade.closeDate).toLocaleString() : '',
-              profit: trade.profitAbs ?? 0,
-              cumulativeProfit: cumulativeProfit
-          };
-      })
+      { name: 'Start', date: firstTradeDate ?? new Date().toISOString(), profit: 0, cumulativeProfit: 0 },
+      ...cumulativeProfitHistoryRaw
     ];
 
     const recentClosedTrades = closedTrades.slice().sort((a: any, b: any) => {
