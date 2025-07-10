@@ -1,3 +1,4 @@
+
 'use server';
 
 import {NextResponse} from 'next/server';
@@ -53,9 +54,17 @@ export async function GET(request: Request) {
 
   try {
     const [statusData, tradesData] = await Promise.all([
-        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({})), // Using /status
-        apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] })), // Using /trades
+        apiFetch(`${config.baseUrl}/status`, headers).catch(() => ({})),
+        apiFetch(`${config.baseUrl}/trades`, headers).catch(() => ({ trades: [] })),
     ]);
+    
+    // --- START DEBUG LOGGING ---
+    console.log(`--- RAW DATA FOR ${model.toUpperCase()} ---`);
+    console.log("Raw /status response:", JSON.stringify(statusData, null, 2));
+    console.log("Raw /trades response:", JSON.stringify(tradesData, null, 2));
+    console.log(`-------------------------------------`);
+    // --- END DEBUG LOGGING ---
+
 
     // --- DATA TRANSFORMATION ---
     const botStatus = (Array.isArray(statusData?.bots?.status) && statusData.bots.status[0]) || {};
@@ -92,7 +101,7 @@ export async function GET(request: Request) {
     
     // Data for charts
     const tradeHistoryForCharts = closedTrades
-        .slice() // Create a shallow copy before reversing
+        .slice() 
         .reverse()
         .map((trade: any, index: number) => ({
             name: `Trade ${index + 1}`,
