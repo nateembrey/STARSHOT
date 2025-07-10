@@ -25,100 +25,56 @@ import {
 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+
+// Data structure we expect from the API
+interface TradingData {
+  totalRevenue: string;
+  pnl: string;
+  pnlPercentage: string;
+  trades: string;
+  winRate: string;
+  recentTrades: {
+    asset: string;
+    type: string;
+    status: string;
+    profit: string;
+  }[];
+}
 
 export function DashboardTab({ modelName }: { modelName: string }) {
-  const isGpt = modelName === 'ChatGPT';
-  // Mock data - in a real app, this would come from an API
-  const totalRevenue = isGpt ? '$45,231.89' : '$39,121.42';
-  const pnl = isGpt ? '+$2,501.32' : '+$1,890.12';
-  const pnlPercentage = isGpt ? '+20.1%' : '+18.5%';
-  const trades = isGpt ? '1,230' : '1,150';
-  const winRate = isGpt ? '72.5%' : '70.1%';
+  const [data, setData] = React.useState<TradingData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const recentTrades = isGpt ? [
-    {
-      asset: 'BTC/USD',
-      type: 'BUY',
-      amount: '0.5 BTC',
-      price: '$68,123.45',
-      profit: '+$543.21',
-      status: 'Closed',
-    },
-    {
-      asset: 'ETH/USD',
-      type: 'SELL',
-      amount: '10 ETH',
-      price: '$3,543.21',
-      profit: '+$1,201.50',
-      status: 'Closed',
-    },
-    {
-      asset: 'SOL/USD',
-      type: 'BUY',
-      amount: '100 SOL',
-      price: '$165.80',
-      profit: '-$89.30',
-      status: 'Closed',
-    },
-     {
-      asset: 'ADA/USD',
-      type: 'BUY',
-      amount: '5000 ADA',
-      price: '$0.45',
-      profit: 'Pending',
-      status: 'Open',
-    },
-     {
-      asset: 'XRP/USD',
-      type: 'SELL',
-      amount: '10000 XRP',
-      price: '$0.52',
-      profit: '+$231.98',
-      status: 'Closed',
-    },
-  ] : [
-    {
-        asset: 'BTC/USD',
-        type: 'BUY',
-        amount: '0.4 BTC',
-        price: '$68,223.45',
-        profit: '+$443.21',
-        status: 'Closed',
-      },
-      {
-        asset: 'ETH/USD',
-        type: 'SELL',
-        amount: '8 ETH',
-        price: '$3,553.21',
-        profit: '+$1,101.50',
-        status: 'Closed',
-      },
-      {
-        asset: 'DOGE/USD',
-        type: 'BUY',
-        amount: '100000 DOGE',
-        price: '$0.158',
-        profit: '+$1500.00',
-        status: 'Closed',
-      },
-      {
-        asset: 'LINK/USD',
-        type: 'BUY',
-        amount: '300 LINK',
-        price: '$18.50',
-        profit: 'Pending',
-        status: 'Open',
-      },
-      {
-        asset: 'AVAX/USD',
-        type: 'BUY',
-        amount: '150 AVAX',
-        price: '$35.70',
-        profit: '-$112.50',
-        status: 'Closed',
-      },
-  ];
+  React.useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/trading-data?model=${modelName.toLowerCase()}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data: ${response.statusText}`);
+        }
+        const result: TradingData = await response.json();
+        setData(result);
+      } catch (err: any) {
+        setError(err.message);
+        // On error, use mock data to keep the UI functional
+        setData(getMockData(modelName)); 
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [modelName]);
+
+  const isGpt = modelName === 'ChatGPT';
+  
+  // Use fetched data if available, otherwise fallback to mock data (or initial empty state)
+  const displayData = data || getMockData(modelName);
 
   const chartData = isGpt ? [
     { month: 'Jan', gpt: 4000, gemini: 2400 },
@@ -163,6 +119,24 @@ export function DashboardTab({ modelName }: { modelName: string }) {
 
   const singleModelChartData = chartData.map(d => ({ month: d.month, performance: isGpt ? d.gpt : d.gemini }));
 
+  if (error) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Card className="m-4 p-4 bg-destructive/10 border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Error Fetching Data</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                        Could not fetch live trading data. Displaying mock data instead.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-destructive">{error}</p>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -172,10 +146,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{totalRevenue}</div>
-            <p className="text-xs text-muted-foreground">
-              {pnl} from last month
-            </p>
+             {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.totalRevenue}</div>}
+             {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">{displayData.pnl} from last month</p>}
           </CardContent>
         </Card>
         <Card>
@@ -184,10 +156,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className={`text-xl font-bold ${pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{pnl}</div>
-            <p className="text-xs text-muted-foreground">
-              {pnlPercentage} vs last month
-            </p>
+            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className={`text-xl font-bold ${displayData.pnl.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{displayData.pnl}</div>}
+            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> :<p className="text-xs text-muted-foreground">{displayData.pnlPercentage} vs last month</p>}
           </CardContent>
         </Card>
         <Card>
@@ -196,10 +166,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{trades}</div>
-            <p className="text-xs text-muted-foreground">
-              +180 since last hour
-            </p>
+            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.trades}</div>}
+            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">+180 since last hour</p>}
           </CardContent>
         </Card>
         <Card>
@@ -208,10 +176,8 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{winRate}</div>
-            <p className="text-xs text-muted-foreground">
-              +1.2% since yesterday
-            </p>
+            {isLoading ? <Skeleton className="h-7 w-3/4" /> : <div className="text-xl font-bold">{displayData.winRate}</div>}
+            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">+1.2% since yesterday</p>}
           </CardContent>
         </Card>
       </div>
@@ -282,49 +248,83 @@ export function DashboardTab({ modelName }: { modelName: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="h-10 px-2">Asset</TableHead>
-                  <TableHead className="h-10 px-2">Type</TableHead>
-                  <TableHead className="h-10 px-2">Status</TableHead>
-                  <TableHead className="h-10 px-2 text-right">Profit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentTrades.map((trade, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium p-2">{trade.asset}</TableCell>
-                    <TableCell className="p-2">
-                      <Badge
-                        variant={'secondary'}
-                        className={`flex items-center gap-1 w-fit border-transparent ${
-                          trade.type === 'BUY'
-                            ? 'bg-muted text-card-foreground hover:bg-muted/80'
-                            : 'bg-black text-white hover:bg-black/80'
-                        }`}
-                      >
-                        {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                        {trade.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="p-2">
-                        <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}
-                           className={trade.status === 'Open' ? 'border-accent text-foreground' : ''}
+             {isLoading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
+             ) : (
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead className="h-10 px-2">Asset</TableHead>
+                    <TableHead className="h-10 px-2">Type</TableHead>
+                    <TableHead className="h-10 px-2">Status</TableHead>
+                    <TableHead className="h-10 px-2 text-right">Profit</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {displayData.recentTrades.map((trade, index) => (
+                    <TableRow key={index}>
+                        <TableCell className="font-medium p-2">{trade.asset}</TableCell>
+                        <TableCell className="p-2">
+                        <Badge
+                            variant={'secondary'}
+                            className={`flex items-center gap-1 w-fit border-transparent ${
+                            trade.type === 'BUY'
+                                ? 'bg-muted/70 text-card-foreground hover:bg-muted/80'
+                                : 'bg-black text-white hover:bg-black/80'
+                            }`}
                         >
-                            {trade.status}
+                            {trade.type === 'BUY' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                            {trade.type}
                         </Badge>
-                    </TableCell>
-                    <TableCell className={`p-2 text-right font-semibold ${trade.profit === 'Pending' ? '' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                      {trade.profit}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell className="p-2">
+                            <Badge variant={trade.status === 'Open' ? 'outline' : 'secondary'}
+                            className={trade.status === 'Open' ? 'border-accent text-foreground' : ''}
+                            >
+                                {trade.status}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className={`p-2 text-right font-semibold ${trade.profit === 'Pending' ? 'text-muted-foreground' : trade.profit.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                        {trade.profit}
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+             )}
           </CardContent>
         </Card>
       </div>
     </>
   );
+}
+
+
+function getMockData(modelName: string): TradingData {
+  const isGpt = modelName === 'ChatGPT';
+  return {
+    totalRevenue: isGpt ? '$45,231.89' : '$39,121.42',
+    pnl: isGpt ? '+$2,501.32' : '+$1,890.12',
+    pnlPercentage: isGpt ? '+20.1%' : '+18.5%',
+    trades: isGpt ? '1,230' : '1,150',
+    winRate: isGpt ? '72.5%' : '70.1%',
+    recentTrades: isGpt ? [
+      { asset: 'BTC/USD', type: 'BUY', profit: '+$543.21', status: 'Closed' },
+      { asset: 'ETH/USD', type: 'SELL', profit: '+$1,201.50', status: 'Closed' },
+      { asset: 'SOL/USD', type: 'BUY', profit: '-$89.30', status: 'Closed' },
+      { asset: 'ADA/USD', type: 'BUY', profit: 'Pending', status: 'Open' },
+      { asset: 'XRP/USD', type: 'SELL', profit: '+$231.98', status: 'Closed' },
+    ] : [
+      { asset: 'BTC/USD', type: 'BUY', profit: '+$443.21', status: 'Closed' },
+      { asset: 'ETH/USD', type: 'SELL', profit: '+$1,101.50', status: 'Closed' },
+      { asset: 'DOGE/USD', type: 'BUY', profit: '+$1500.00', status: 'Closed' },
+      { asset: 'LINK/USD', type: 'BUY', profit: 'Pending', status: 'Open' },
+      { asset: 'AVAX/USD', type: 'BUY', profit: '-$112.50', status: 'Closed' },
+    ],
+  };
 }
