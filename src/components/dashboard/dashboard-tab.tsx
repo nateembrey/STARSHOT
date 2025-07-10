@@ -78,7 +78,7 @@ const StatCard = ({ title, value, icon: Icon, subtext, isLoading, hasData }: { t
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="py-2">
+            <CardContent className="py-6">
                 {isLoading ? (
                     <>
                         <Skeleton className="h-10 w-3/4" />
@@ -278,10 +278,27 @@ export function DashboardTab({ modelName, data, isLoading }: { modelName: string
   const percentageProfitValue = data?.percentageProfit ?? 0;
   const percentageProfitColor = percentageProfitValue >= 0 ? 'text-[hsl(var(--chart-2))]' : 'text-[hsl(var(--accent))]';
 
+  const formatPnl = (value: number) => {
+    const absValue = Math.abs(value);
+    if (absValue < 1000) {
+      return value.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+    }
+    const formatted = (value / 1000).toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+    return `$${formatted}k`;
+  };
+
   return (
     <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{pnlValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
+            <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Total P&L" value={<span className={pnlColor}>{formatPnl(pnlValue)}</span>} icon={TrendingUp} subtext="Profit & Loss from closed trades."/>
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Percentage Profit" value={<span className={percentageProfitColor}>{`${percentageProfitValue.toFixed(2)}%`}</span>} icon={TrendingUp} subtext="Total P&L / total invested capital." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Closed Trades" value={data?.totalTrades.toLocaleString() ?? 'N/A'} icon={Activity} subtext="Total trades completed." />
             <StatCard isLoading={isLoading} hasData={!!data && data.totalTrades > 0} title="Win Rate" value={`${((data?.winRate ?? 0) * 100).toFixed(1)}%`} icon={Percent} subtext="Percentage of profitable trades."/>
